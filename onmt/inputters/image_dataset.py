@@ -20,7 +20,7 @@ class ImageDataset(DatasetBase):
         from image corpus.
 
         Args:
-            fields (dict): a dictionary of `torchtext.data.Field`.
+            fields (dict): a dictionary of `torchtext.legacy.data.Field`.
             src_examples_iter (dict iter): preprocessed source example
                 dictionary iterator.
             tgt_examples_iter (dict iter): preprocessed target example
@@ -173,9 +173,9 @@ class ImageDataset(DatasetBase):
         """
         Args:
             n_src_features: the number of source features to
-                create `torchtext.data.Field` for.
+                create `torchtext.legacy.data.Field` for.
             n_tgt_features: the number of target features to
-                create `torchtext.data.Field` for.
+                create `torchtext.legacy.data.Field` for.
 
         Returns:
             A dictionary whose keys are strings and whose values
@@ -193,21 +193,21 @@ class ImageDataset(DatasetBase):
                 imgs[i, :, 0:img.size(1), 0:img.size(2)] = img
             return imgs
 
-        fields["src"] = torchtext.data.Field(
+        fields["src"] = torchtext.legacy.data.Field(
             use_vocab=False, dtype=torch.float,
             postprocessing=make_img, sequential=False)
 
         for j in range(n_src_features):
             fields["src_feat_" + str(j)] = \
-                torchtext.data.Field(pad_token=PAD_WORD)
+                torchtext.legacy.data.Field(pad_token=PAD_WORD)
 
-        fields["tgt"] = torchtext.data.Field(
+        fields["tgt"] = torchtext.legacy.data.Field(
             init_token=BOS_WORD, eos_token=EOS_WORD,
             pad_token=PAD_WORD)
 
         for j in range(n_tgt_features):
             fields["tgt_feat_" + str(j)] = \
-                torchtext.data.Field(init_token=BOS_WORD, eos_token=EOS_WORD,
+                torchtext.legacy.data.Field(init_token=BOS_WORD, eos_token=EOS_WORD,
                                      pad_token=PAD_WORD)
 
         def make_src(data, vocab):
@@ -220,7 +220,7 @@ class ImageDataset(DatasetBase):
                     alignment[j, i, t] = 1
             return alignment
 
-        fields["src_map"] = torchtext.data.Field(
+        fields["src_map"] = torchtext.legacy.data.Field(
             use_vocab=False, dtype=torch.float,
             postprocessing=make_src, sequential=False)
 
@@ -232,11 +232,11 @@ class ImageDataset(DatasetBase):
                 alignment[:sent.size(0), i] = sent
             return alignment
 
-        fields["alignment"] = torchtext.data.Field(
+        fields["alignment"] = torchtext.legacy.data.Field(
             use_vocab=False, dtype=torch.long,
             postprocessing=make_tgt, sequential=False)
 
-        fields["indices"] = torchtext.data.Field(
+        fields["indices"] = torchtext.legacy.data.Field(
             use_vocab=False, dtype=torch.long,
             sequential=False)
 

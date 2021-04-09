@@ -40,9 +40,9 @@ def get_fields(data_type, n_src_features, n_tgt_features):
     Args:
         data_type: type of the source input. Options are [text|img|audio].
         n_src_features: the number of source features to
-            create `torchtext.data.Field` for.
+            create `torchtext.legacy.data.Field` for.
         n_tgt_features: the number of target features to
-            create `torchtext.data.Field` for.
+            create `torchtext.legacy.data.Field` for.
 
     Returns:
         A dictionary whose keys are strings and whose values are the
@@ -412,15 +412,15 @@ def load_vocabulary(vocabulary_path, tag=""):
     return vocabulary
 
 
-class OrderedIterator(torchtext.data.Iterator):
+class OrderedIterator(torchtext.legacy.data.Iterator):
     """ Ordered Iterator Class """
 
     def create_batches(self):
         """ Create batches """
         if self.train:
             def _pool(data, random_shuffler):
-                for p in torchtext.data.batch(data, self.batch_size * 100):
-                    p_batch = torchtext.data.batch(
+                for p in torchtext.legacy.data.batch(data, self.batch_size * 100):
+                    p_batch = torchtext.legacy.data.batch(
                         sorted(p, key=self.sort_key),
                         self.batch_size, self.batch_size_fn)
                     for b in random_shuffler(list(p_batch)):
@@ -429,7 +429,7 @@ class OrderedIterator(torchtext.data.Iterator):
             self.batches = _pool(self.data(), self.random_shuffler)
         else:
             self.batches = []
-            for b in torchtext.data.batch(self.data(), self.batch_size,
+            for b in torchtext.legacy.data.batch(self.data(), self.batch_size,
                                           self.batch_size_fn):
                 self.batches.append(sorted(b, key=self.sort_key))
 
