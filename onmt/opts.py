@@ -133,7 +133,7 @@ def model_opts(parser):
                        dotprod or general (Luong) or MLP (Bahdanau)""")
     group.add('--global_attention_function', '-global_attention_function',
               type=str, default="softmax",
-              choices=["softmax", "sparsemax", "tsallis15", "tsallis"],
+              choices=["softmax", "sparsemax", "tsallis15", "tsallis", "sparsesoftmax"],
               help=("Attention probability mapping to use. If `tsallis`, you "
                     "must set --global_attention_alpha and "
                     "--global_attention_bisect_iter. `tsallis` with alpha=1.5 "
@@ -161,7 +161,7 @@ def model_opts(parser):
     group.add('--copy_attn', '-copy_attn', action="store_true",
               help='Train copy attention layer.')
     group.add('--generator_function', '-generator_function', default=None,
-              choices=["softmax", "sparsemax", "tsallis15"],
+              choices=["softmax", "sparsemax", "tsallis15", "sparsesoftmax"],
               help="""Alias for alpha value to be used for generator and
               loss function. Softmax corresponds to alpha=1, sparsemax to
               alpha=2, and tsallis=1.5. If passed, this overrides an explicitly

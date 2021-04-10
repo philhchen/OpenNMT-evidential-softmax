@@ -7,7 +7,9 @@ from onmt.modules.sparse_activations import (
     sparsemax,
     sparsemax_topk,
     tsallis15,
-    tsallis15_topk)
+    tsallis15_topk,
+    sparsesoftmax,
+)
 
 from onmt.modules.root_finding import tsallis_bisect, sparsemax_bisect
 
@@ -82,7 +84,7 @@ class GlobalAttention(nn.Module):
         assert attn_type in ["dot", "general", "mlp"], (
             "Please select a valid attention type.")
         self.attn_type = attn_type
-        assert attn_func in ("softmax", "sparsemax", "tsallis15", "tsallis"), \
+        assert attn_func in ("softmax", "sparsemax", "tsallis15", "tsallis", "sparsesoftmax"), \
             "Please select a valid attention function."
         self.attn_func = attn_func
 
@@ -157,6 +159,9 @@ class GlobalAttention(nn.Module):
     def attn_map(self, Z):
         if self.attn_func == "softmax":
             return F.softmax(Z, -1)
+        
+        elif self.attn_func == "sparsesoftmax":
+            return sparsesoftmax(Z, -1)
 
         elif self.attn_func == "sparsemax":
             return sparsemax(Z, -1)

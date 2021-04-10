@@ -83,38 +83,41 @@ def build_dataset_iter(datasets, fields, batch_size, use_gpu):
 
 def load_model(checkpoint, fields, k=0, bisect_iter=0, gpu=False):
     model_opt = checkpoint['opt']
-    alpha_lookup = {'softmax': 1.0, 'tsallis15': 1.5, 'sparsemax': 2.0}
-    if not hasattr(model_opt, 'loss_alpha'):
-        model_opt.loss_alpha = alpha_lookup[model_opt.generator_function]
-    gen_alpha = alpha_lookup.get(model_opt.generator_function,
-                                 model_opt.loss_alpha)
-    if not hasattr(model_opt, 'global_attention_alpha'):
-        model_opt.global_attention_alpha = alpha_lookup[model_opt.global_attention_function]
-    if not hasattr(model_opt, 'global_attention_bisect_iter'):
-        model_opt.global_attention_bisect_iter = 0
-    model = build_base_model(model_opt, fields, gpu, checkpoint)
-
-    assert opt.k == 0 or opt.bisect_iter == 0, \
-        "Bisection and topk are mutually exclusive ! !"
-    if gen_alpha == 1.0:
-        gen_func = nn.Softmax(dim=-1)
-    elif gen_alpha == 2.0:
-        if k > 0:
-            gen_func = onmt.modules.sparse_activations.SparsemaxTopK(dim=-1, k=k)
-        elif bisect_iter > 0:
-            gen_func = onmt.modules.sparse_activations.SparsemaxBisect(n_iter=bisect_iter)
-        else:
-            gen_func = onmt.modules.sparse_activations.Sparsemax(dim=-1)
-    elif gen_alpha == 1.5 and bisect_iter == 0:
-        if k > 0:
-            gen_func = onmt.modules.sparse_activations.Tsallis15TopK(dim=-1, k=k)
-        else:
-            gen_func = onmt.modules.sparse_activations.Tsallis15(dim=-1)
+    if model_opt.generator_function == 'sparsesoftmax':
+        gen_func = onmt.modules.sparse_activations.Sparsesoftmax(dim=-1)
     else:
-        # generic tsallis with bisection
-        assert bisect_iter > 0, "Must use bisection with alpha != 1,1.5,2"
-        gen_func = onmt.modules.sparse_activations.TsallisBisect(
-            alpha=gen_alpha, n_iter=bisect_iter)
+        alpha_lookup = {'softmax': 1.0, 'tsallis15': 1.5, 'sparsemax': 2.0}
+        if not hasattr(model_opt, 'loss_alpha'):
+            model_opt.loss_alpha = alpha_lookup[model_opt.generator_function]
+        gen_alpha = alpha_lookup.get(model_opt.generator_function,
+                                    model_opt.loss_alpha)
+        if not hasattr(model_opt, 'global_attention_alpha'):
+            model_opt.global_attention_alpha = alpha_lookup[model_opt.global_attention_function]
+        if not hasattr(model_opt, 'global_attention_bisect_iter'):
+            model_opt.global_attention_bisect_iter = 0
+        model = build_base_model(model_opt, fields, gpu, checkpoint)
+
+        assert opt.k == 0 or opt.bisect_iter == 0, \
+            "Bisection and topk are mutually exclusive ! !"
+        if gen_alpha == 1.0:
+            gen_func = nn.Softmax(dim=-1)
+        elif gen_alpha == 2.0:
+            if k > 0:
+                gen_func = onmt.modules.sparse_activations.SparsemaxTopK(dim=-1, k=k)
+            elif bisect_iter > 0:
+                gen_func = onmt.modules.sparse_activations.SparsemaxBisect(n_iter=bisect_iter)
+            else:
+                gen_func = onmt.modules.sparse_activations.Sparsemax(dim=-1)
+        elif gen_alpha == 1.5 and bisect_iter == 0:
+            if k > 0:
+                gen_func = onmt.modules.sparse_activations.Tsallis15TopK(dim=-1, k=k)
+            else:
+                gen_func = onmt.modules.sparse_activations.Tsallis15(dim=-1)
+        else:
+            # generic tsallis with bisection
+            assert bisect_iter > 0, "Must use bisection with alpha != 1,1.5,2"
+            gen_func = onmt.modules.sparse_activations.TsallisBisect(
+                alpha=gen_alpha, n_iter=bisect_iter)
 
     gen_weights = model.generator[0] if \
         isinstance(model.generator, nn.Sequential) else model.generator

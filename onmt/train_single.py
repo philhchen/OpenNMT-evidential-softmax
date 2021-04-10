@@ -150,8 +150,13 @@ def main(opt, device_id):
         logger.info('Starting training on GPU: %s' % opt.gpu_ranks)
     else:
         logger.info('Starting training on CPU, could be very slow')
+    
+    # import cProfile
+    # with cProfile.Profile() as pr:
     trainer.train(train_iter_fct, valid_iter_fct, opt.train_steps,
                   opt.valid_steps)
+    # pr.print_stats()
+    # pr.dump_stats('/home/philhc/OpenNMT-evidential-softmax/exp/prof.stats')
 
     if opt.tensorboard:
         trainer.report_manager.tensorboard_writer.close()

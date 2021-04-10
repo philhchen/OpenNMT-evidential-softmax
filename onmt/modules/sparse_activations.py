@@ -8,6 +8,7 @@ By Ben Peters and Vlad Niculae
 import torch
 from torch.autograd import Function
 import torch.nn as nn
+import torch.nn.functional as F
 from onmt.modules.root_finding import tsallis_bisect, sparsemax_bisect
 
 
@@ -359,3 +360,50 @@ class LogSparsemaxBisect(nn.Module):
         p_star /= p_star.sum(dim=1).unsqueeze(dim=1)
 
         return torch.log(p_star)
+
+
+INF = 1e6
+
+def log_sparsesoftmax(input: torch.Tensor, dim: int, train: bool = True) -> torch.Tensor:
+    mask = input < torch.mean(input, dim=dim, keepdim=True)
+    mask_offset = mask * (INF if self.train else float("Inf"))
+    log_probs = F.log_softmax(input - mask_offset, dim=dim)
+    return log_probs
+
+
+def sparsesoftmax(input: torch.Tensor, dim: int, train: bool = True) -> torch.Tensor:
+    mask = input < torch.mean(input, dim=dim, keepdim=True)
+    mask_offset = mask * (INF if train else float("Inf"))
+    probs = F.softmax(input - mask_offset, dim=dim)
+    return probs
+
+
+class LogSparseSoftmax(torch.nn.Module):
+    def __init__(self, dim: int = -1, train: bool = True):
+        super(LogSparseSoftmax, self).__init__()
+        self.dim = dim
+        self.train = train
+    
+    def forward(self, X: torch.Tensor) -> torch.Tensor:
+        return log_sparsesoftmax(X, self.dim, self.train)
+
+
+class SparseSoftmax(torch.nn.Module):
+    def __init__(self, dim: int = -1, train: bool = True):
+        super(SparseSoftmax, self).__init__()
+        self.dim = dim
+        self.train = train
+    
+    def forward(self, X: torch.Tensor) -> torch.Tensor:
+        return sparsesoftmax(X, self.dim, self.train)
+
+
+class SparseSoftmaxLoss(torch.nn.Module):
+    def __init__(self, reduction: str = 'none', dim: int = -1):
+        super(SparseSoftmaxLoss, self).__init__()
+        self.log_sparse_softmax = LogSparseSoftmax(dim)
+        self.reduction = reduction
+        self.dim = dim
+    
+    def forward(self, input: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        return F.nll_loss(self.log_sparse_softmax(input), target, reduction=self.reduction)

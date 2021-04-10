@@ -1,12 +1,20 @@
 data: exp/dataset.de-en
-save_model: exp/model.de-en
+save_model: exp/model.de-en.sparsesoftmax
 save_checkpoint_steps: 10000
 keep_checkpoint: 10
 seed: 3435
 train_steps: 500000
 valid_steps: 10000
 warmup_steps: 8000
-report_every: 100
+report_every: 1
+# train_steps: 10
+# valid_steps: 5
+# warmup_steps: 5
+# report_every: 1
+
+global_attention_function: sparsesoftmax
+generator_function: sparsesoftmax
+# gpu_verbose_level: 1
 
 decoder_type: transformer
 encoder_type: transformer
@@ -39,4 +47,3 @@ position_encoding: 'true'
 world_size: 1
 gpu_ranks:
 - 0
-

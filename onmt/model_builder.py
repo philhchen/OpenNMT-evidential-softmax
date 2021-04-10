@@ -146,30 +146,33 @@ def load_test_model(opt, dummy_opt, model_path=None):
     model = build_base_model(model_opt, fields, use_gpu(opt), checkpoint)
 
     # now build the generator
-    alpha_lookup = {'softmax': 1.0, 'tsallis15': 1.5, 'sparsemax': 2.0}
-    gen_alpha = alpha_lookup.get(model_opt.generator_function,
-                                 model_opt.loss_alpha)
-    assert opt.k == 0 or opt.bisect_iter == 0, \
-        "Bisection and topk are mutually exclusive ! !"
-    if gen_alpha == 1.0:
-        gen_func = nn.LogSoftmax(dim=-1)
-    elif gen_alpha == 2.0:
-        if opt.k > 0:
-            gen_func = onmt.modules.sparse_activations.LogSparsemaxTopK(dim=-1, k=opt.k)
-        elif opt.bisect_iter > 0:
-            gen_func = onmt.modules.sparse_activations.LogSparsemaxBisect(n_iter=opt.bisect_iter)
-        else:
-            gen_func = onmt.modules.sparse_activations.LogSparsemax(dim=-1)
-    elif gen_alpha == 1.5 and opt.bisect_iter == 0:
-        if opt.k > 0:
-            gen_func = onmt.modules.sparse_activations.LogTsallis15TopK(dim=-1, k=opt.k)
-        else:
-            gen_func = onmt.modules.sparse_activations.LogTsallis15(dim=-1)
+    if model_opt.generator_function == 'sparsesoftmax':
+        gen_func = onmt.modules.sparse_activations.LogSparsesoftmax(dim=-1)
     else:
-        # generic tsallis with bisection
-        assert opt.bisect_iter > 0, "Must use bisection with alpha != 1,1.5,2"
-        gen_func = onmt.modules.sparse_activations.LogTsallisBisect(
-            alpha=gen_alpha, n_iter=opt.bisect_iter)
+        alpha_lookup = {'softmax': 1.0, 'tsallis15': 1.5, 'sparsemax': 2.0}
+        gen_alpha = alpha_lookup.get(model_opt.generator_function,
+                                    model_opt.loss_alpha)
+        assert opt.k == 0 or opt.bisect_iter == 0, \
+            "Bisection and topk are mutually exclusive ! !"
+        if gen_alpha == 1.0:
+            gen_func = nn.LogSoftmax(dim=-1)
+        elif gen_alpha == 2.0:
+            if opt.k > 0:
+                gen_func = onmt.modules.sparse_activations.LogSparsemaxTopK(dim=-1, k=opt.k)
+            elif opt.bisect_iter > 0:
+                gen_func = onmt.modules.sparse_activations.LogSparsemaxBisect(n_iter=opt.bisect_iter)
+            else:
+                gen_func = onmt.modules.sparse_activations.LogSparsemax(dim=-1)
+        elif gen_alpha == 1.5 and opt.bisect_iter == 0:
+            if opt.k > 0:
+                gen_func = onmt.modules.sparse_activations.LogTsallis15TopK(dim=-1, k=opt.k)
+            else:
+                gen_func = onmt.modules.sparse_activations.LogTsallis15(dim=-1)
+        else:
+            # generic tsallis with bisection
+            assert opt.bisect_iter > 0, "Must use bisection with alpha != 1,1.5,2"
+            gen_func = onmt.modules.sparse_activations.LogTsallisBisect(
+                alpha=gen_alpha, n_iter=opt.bisect_iter)
 
     # if model.generator is a Sequential, this unpacks the linear layer from
     # inside it so it can be combined with the translation-time output

@@ -4,3 +4,4 @@ torch
 git+https://github.com/pytorch/text
 future
 configargparse
+PyYAML
