@@ -6,13 +6,13 @@ import torch.nn as nn
 
 
 class PositionwiseFeedForward(nn.Module):
-    """ A two-layer Feed-Forward-Network with residual layer norm.
+    """A two-layer Feed-Forward-Network with residual layer norm.
 
-        Args:
-            d_model (int): the size of input for the first-layer of the FFN.
-            d_ff (int): the hidden layer size of the second-layer
-                              of the FNN.
-            dropout (float): dropout probability(0-1.0).
+    Args:
+        d_model (int): the size of input for the first-layer of the FFN.
+        d_ff (int): the hidden layer size of the second-layer
+                          of the FNN.
+        dropout (float): dropout probability(0-1.0).
     """
 
     def __init__(self, d_model, d_ff, dropout=0.1):

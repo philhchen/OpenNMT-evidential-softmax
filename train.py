@@ -26,21 +26,32 @@ def main(opt):
         raise AssertionError("BPTT is not compatible with -accum > 1")
 
     if opt.gpuid:
-        raise AssertionError("gpuid is deprecated \
-              see world_size and gpu_ranks")
+        raise AssertionError(
+            "gpuid is deprecated \
+              see world_size and gpu_ranks"
+        )
 
     nb_gpu = len(opt.gpu_ranks)
 
     if opt.world_size > 1:
-        mp = torch.multiprocessing.get_context('spawn')
+        mp = torch.multiprocessing.get_context("spawn")
         # Create a thread to listen for errors in the child processes.
         error_queue = mp.SimpleQueue()
         error_handler = ErrorHandler(error_queue)
         # Train with multiprocessing.
         procs = []
         for device_id in range(nb_gpu):
-            procs.append(mp.Process(target=run, args=(
-                opt, device_id, error_queue, ), daemon=True))
+            procs.append(
+                mp.Process(
+                    target=run,
+                    args=(
+                        opt,
+                        device_id,
+                        error_queue,
+                    ),
+                    daemon=True,
+                )
+            )
             procs[device_id].start()
             logger.info(" Starting process pid: %d  " % procs[device_id].pid)
             error_handler.add_child(procs[device_id].pid)
@@ -49,7 +60,7 @@ def main(opt):
 
     elif nb_gpu == 1:  # case 1 GPU only
         single_main(opt, 0)
-    else:   # case only CPU
+    else:  # case only CPU
         single_main(opt, -1)
 
 
@@ -58,14 +69,17 @@ def run(opt, device_id, error_queue):
     try:
         gpu_rank = onmt.utils.distributed.multi_init(opt, device_id)
         if gpu_rank != opt.gpu_ranks[device_id]:
-            raise AssertionError("An error occurred in \
-                  Distributed initialization")
+            raise AssertionError(
+                "An error occurred in \
+                  Distributed initialization"
+            )
         single_main(opt, device_id)
     except KeyboardInterrupt:
         pass  # killed by parent, do nothing
     except Exception:
         # propagate exception to parent process, keeping original traceback
         import traceback
+
         error_queue.put((opt.gpu_ranks[device_id], traceback.format_exc()))
 
 
@@ -77,10 +91,10 @@ class ErrorHandler(object):
         """ init error handler """
         import signal
         import threading
+
         self.error_queue = error_queue
         self.children_pids = []
-        self.error_thread = threading.Thread(
-            target=self.error_listener, daemon=True)
+        self.error_thread = threading.Thread(target=self.error_listener, daemon=True)
         self.error_thread.start()
         signal.signal(signal.SIGUSR1, self.signal_handler)
 
@@ -107,9 +121,10 @@ class ErrorHandler(object):
 
 if __name__ == "__main__":
     parser = configargparse.ArgumentParser(
-        description='train.py',
+        description="train.py",
         config_file_parser_class=configargparse.YAMLConfigFileParser,
-        formatter_class=configargparse.ArgumentDefaultsHelpFormatter)
+        formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
+    )
 
     opts.config_opts(parser)
     opts.add_md_help_argument(parser)

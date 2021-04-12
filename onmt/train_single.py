@@ -11,8 +11,12 @@ import torch
 
 import onmt.opts as opts
 
-from onmt.inputters.inputter import build_dataset_iter, lazily_load_dataset, \
-    _load_fields, _collect_report_features
+from onmt.inputters.inputter import (
+    build_dataset_iter,
+    lazily_load_dataset,
+    _load_fields,
+    _collect_report_features,
+)
 from onmt.model_builder import build_model
 from onmt.utils.optimizers import build_optim
 from onmt.trainer import build_trainer
@@ -32,7 +36,7 @@ def _tally_parameters(model):
     enc = 0
     dec = 0
     for name, param in model.named_parameters():
-        if 'encoder' in name:
+        if "encoder" in name:
             enc += param.nelement()
         else:
             dec += param.nelement()
@@ -51,18 +55,22 @@ def training_opt_postprocessing(opt, device_id):
     if opt.rnn_size != -1:
         opt.enc_rnn_size = opt.rnn_size
         opt.dec_rnn_size = opt.rnn_size
-        if opt.model_type == 'text' and opt.enc_rnn_size != opt.dec_rnn_size:
-            raise AssertionError("""We do not support different encoder and
-                                 decoder rnn sizes for translation now.""")
+        if opt.model_type == "text" and opt.enc_rnn_size != opt.dec_rnn_size:
+            raise AssertionError(
+                """We do not support different encoder and
+                                 decoder rnn sizes for translation now."""
+            )
 
-    opt.brnn = (opt.encoder_type == "brnn")
+    opt.brnn = opt.encoder_type == "brnn"
 
     if opt.rnn_type == "SRU" and not opt.gpu_ranks:
         raise AssertionError("Using SRU requires -gpu_ranks set.")
 
     if torch.cuda.is_available() and not opt.gpu_ranks:
-        logger.info("WARNING: You have a CUDA device, \
-                    should run with -gpu_ranks")
+        logger.info(
+            "WARNING: You have a CUDA device, \
+                    should run with -gpu_ranks"
+        )
 
     if opt.seed > 0:
         torch.manual_seed(opt.seed)
@@ -87,9 +95,10 @@ def main(opt, device_id):
     init_logger(opt.log_file)
     # Load checkpoint if we resume from a previous training.
     if opt.train_from:
-        logger.info('Loading checkpoint from %s' % opt.train_from)
-        checkpoint = torch.load(opt.train_from,
-                                map_location=lambda storage, loc: storage)
+        logger.info("Loading checkpoint from %s" % opt.train_from)
+        checkpoint = torch.load(
+            opt.train_from, map_location=lambda storage, loc: storage
+        )
 
         # Load default opts values then overwrite it with opts from
         # the checkpoint. It's usefull in order to re-train a model
@@ -99,7 +108,7 @@ def main(opt, device_id):
         default_opt = dummy_parser.parse_known_args([])[0]
 
         model_opt = default_opt
-        model_opt.__dict__.update(checkpoint['opt'].__dict__)
+        model_opt.__dict__.update(checkpoint["opt"].__dict__)
     else:
         checkpoint = None
         model_opt = opt
@@ -116,18 +125,16 @@ def main(opt, device_id):
 
     src_features, tgt_features = _collect_report_features(fields)
     for j, feat in enumerate(src_features):
-        logger.info(' * src feature %d size = %d'
-                    % (j, len(fields[feat].vocab)))
+        logger.info(" * src feature %d size = %d" % (j, len(fields[feat].vocab)))
     for j, feat in enumerate(tgt_features):
-        logger.info(' * tgt feature %d size = %d'
-                    % (j, len(fields[feat].vocab)))
+        logger.info(" * tgt feature %d size = %d" % (j, len(fields[feat].vocab)))
 
     # Build model.
     model = build_model(model_opt, opt, fields, checkpoint)
     n_params, enc, dec = _tally_parameters(model)
-    logger.info('encoder: %d' % enc)
-    logger.info('decoder: %d' % dec)
-    logger.info('* number of parameters: %d' % n_params)
+    logger.info("encoder: %d" % enc)
+    logger.info("decoder: %d" % dec)
+    logger.info("* number of parameters: %d" % n_params)
     _check_save_model_path(opt)
 
     # Build optimizer.
@@ -136,25 +143,27 @@ def main(opt, device_id):
     # Build model saver
     model_saver = build_model_saver(model_opt, opt, model, fields, optim)
 
-    trainer = build_trainer(opt, device_id, model, fields,
-                            optim, data_type, model_saver=model_saver)
+    trainer = build_trainer(
+        opt, device_id, model, fields, optim, data_type, model_saver=model_saver
+    )
 
-    def train_iter_fct(): return build_dataset_iter(
-        lazily_load_dataset("train", opt), fields, opt)
+    def train_iter_fct():
+        return build_dataset_iter(lazily_load_dataset("train", opt), fields, opt)
 
-    def valid_iter_fct(): return build_dataset_iter(
-        lazily_load_dataset("valid", opt), fields, opt, is_train=False)
+    def valid_iter_fct():
+        return build_dataset_iter(
+            lazily_load_dataset("valid", opt), fields, opt, is_train=False
+        )
 
     # Do training.
     if len(opt.gpu_ranks):
-        logger.info('Starting training on GPU: %s' % opt.gpu_ranks)
+        logger.info("Starting training on GPU: %s" % opt.gpu_ranks)
     else:
-        logger.info('Starting training on CPU, could be very slow')
-    
+        logger.info("Starting training on CPU, could be very slow")
+
     # import cProfile
     # with cProfile.Profile() as pr:
-    trainer.train(train_iter_fct, valid_iter_fct, opt.train_steps,
-                  opt.valid_steps)
+    trainer.train(train_iter_fct, valid_iter_fct, opt.train_steps, opt.valid_steps)
     # pr.print_stats()
     # pr.dump_stats('/home/philhc/OpenNMT-evidential-softmax/exp/prof.stats')
 
@@ -164,8 +173,9 @@ def main(opt, device_id):
 
 if __name__ == "__main__":
     parser = configargparse.ArgumentParser(
-        description='train.py',
-        formatter_class=configargparse.ArgumentDefaultsHelpFormatter)
+        description="train.py",
+        formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
+    )
 
     opts.add_md_help_argument(parser)
     opts.model_opts(parser)

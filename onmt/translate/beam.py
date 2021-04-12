@@ -17,16 +17,23 @@ class Beam(object):
        global_scorer (:obj:`GlobalScorer`)
     """
 
-    def __init__(self, size, pad, bos, eos,
-                 n_best=1, cuda=False,
-                 global_scorer=None,
-                 min_length=0,
-                 stepwise_penalty=False,
-                 block_ngram_repeat=0,
-                 exclusion_tokens=set()):
+    def __init__(
+        self,
+        size,
+        pad,
+        bos,
+        eos,
+        n_best=1,
+        cuda=False,
+        global_scorer=None,
+        min_length=0,
+        stepwise_penalty=False,
+        block_ngram_repeat=0,
+        exclusion_tokens=set(),
+    ):
 
         self.size = size
-        device = torch.device('cuda') if cuda else torch.device('cpu')
+        device = torch.device("cuda") if cuda else torch.device("cpu")
 
         # The score for each translation on the beam.
         self.scores = torch.zeros(size, device=device)
@@ -36,8 +43,7 @@ class Beam(object):
         self.prev_ks = []
 
         # The outputs at each time-step.
-        self.next_ys = [torch.full((size,), pad, device=device,
-                                   dtype=torch.long)]
+        self.next_ys = [torch.full((size,), pad, device=device, dtype=torch.long)]
         self.next_ys[0][0] = bos
 
         # Has EOS topped the beam yet.
@@ -110,8 +116,7 @@ class Beam(object):
                     gram = []
                     for i in range(le - 1):
                         # Last n tokens, n = block_ngram_repeat
-                        gram = (gram +
-                                [hyp[i].item()])[-self.block_ngram_repeat:]
+                        gram = (gram + [hyp[i].item()])[-self.block_ngram_repeat :]
                         # Skip the blocking if it is in the exclusion list
                         if set(gram) & self.exclusion_tokens:
                             continue
@@ -191,8 +196,9 @@ class GNMTGlobalScorer(object):
     def __init__(self, opt):
         self.alpha = opt.alpha
         self.beta = opt.beta
-        penalty_builder = penalties.PenaltyBuilder(opt.coverage_penalty,
-                                                   opt.length_penalty)
+        penalty_builder = penalties.PenaltyBuilder(
+            opt.coverage_penalty, opt.length_penalty
+        )
         # Term will be subtracted from probability
         self.cov_penalty = penalty_builder.coverage_penalty()
         # Probability will be divided by this
@@ -202,13 +208,9 @@ class GNMTGlobalScorer(object):
         """
         Rescores a prediction based on penalty functions
         """
-        normalized_probs = self.length_penalty(beam,
-                                               logprobs,
-                                               self.alpha)
+        normalized_probs = self.length_penalty(beam, logprobs, self.alpha)
         if not beam.stepwise_penalty:
-            penalty = self.cov_penalty(beam,
-                                       beam.global_state["coverage"],
-                                       self.beta)
+            penalty = self.cov_penalty(beam, beam.global_state["coverage"], self.beta)
             normalized_probs -= penalty
 
         return normalized_probs
@@ -219,9 +221,9 @@ class GNMTGlobalScorer(object):
         """
         if "prev_penalty" in beam.global_state.keys():
             beam.scores.add_(beam.global_state["prev_penalty"])
-            penalty = self.cov_penalty(beam,
-                                       beam.global_state["coverage"] + attn,
-                                       self.beta)
+            penalty = self.cov_penalty(
+                beam, beam.global_state["coverage"] + attn, self.beta
+            )
             beam.scores.sub_(penalty)
 
     def update_global_state(self, beam):
@@ -231,12 +233,16 @@ class GNMTGlobalScorer(object):
             beam.global_state["coverage"] = beam.attn[-1]
             self.cov_total = beam.attn[-1].sum(1)
         else:
-            self.cov_total += torch.min(beam.attn[-1],
-                                        beam.global_state['coverage']).sum(1)
-            beam.global_state["coverage"] = beam.global_state["coverage"] \
-                .index_select(0, beam.prev_ks[-1]).add(beam.attn[-1])
+            self.cov_total += torch.min(
+                beam.attn[-1], beam.global_state["coverage"]
+            ).sum(1)
+            beam.global_state["coverage"] = (
+                beam.global_state["coverage"]
+                .index_select(0, beam.prev_ks[-1])
+                .add(beam.attn[-1])
+            )
 
-            prev_penalty = self.cov_penalty(beam,
-                                            beam.global_state["coverage"],
-                                            self.beta)
+            prev_penalty = self.cov_penalty(
+                beam, beam.global_state["coverage"], self.beta
+            )
             beam.global_state["prev_penalty"] = prev_penalty

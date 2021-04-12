@@ -20,8 +20,8 @@ from onmt.modules.sparse_losses import (
 )
 
 
-@pytest.mark.parametrize('dim', (0, 1, 2))
-@pytest.mark.parametrize('Map', (SparsemaxTopK, Tsallis15TopK))
+@pytest.mark.parametrize("dim", (0, 1, 2))
+@pytest.mark.parametrize("Map", (SparsemaxTopK, Tsallis15TopK))
 def test_mapping(dim, Map):
     f = Map(dim=dim, k=3)
 
@@ -30,8 +30,8 @@ def test_mapping(dim, Map):
         gradcheck(f, (x,))
 
 
-@pytest.mark.parametrize('dim', (0, 1, 2))
-@pytest.mark.parametrize('coef', (0.00001, 0.5, 10000))
+@pytest.mark.parametrize("dim", (0, 1, 2))
+@pytest.mark.parametrize("coef", (0.00001, 0.5, 10000))
 def test_tsallis_topk(dim, coef):
     x = coef * torch.randn(10, 11, 12)
     tau1, supp1 = _tsallis_threshold_and_support(x, dim=dim)
@@ -41,9 +41,9 @@ def test_tsallis_topk(dim, coef):
     assert torch.all(supp1 == supp2)
 
 
-@pytest.mark.parametrize('dim', (0, 1, 2))
-@pytest.mark.parametrize('coef', (0.00001, 0.5, 10000))
-@pytest.mark.parametrize('k', (5, 30))
+@pytest.mark.parametrize("dim", (0, 1, 2))
+@pytest.mark.parametrize("coef", (0.00001, 0.5, 10000))
+@pytest.mark.parametrize("k", (5, 30))
 def test_sparsemax_topk(dim, coef, k):
 
     x = coef * torch.randn(10, 11, 12)
@@ -67,13 +67,14 @@ def _bench(f):
 
 def check_speed():
     import sys
+
     # device = 'cpu'
     # device = 'cuda'
 
     vocab_size = int(sys.argv[1]) if len(sys.argv) > 1 else 32000
     k = int(sys.argv[2]) if len(sys.argv) > 2 else 500
     n_iter = int(sys.argv[3]) if len(sys.argv) > 3 else 10
-    device = sys.argv[4] if len(sys.argv) > 4 else 'cpu'
+    device = sys.argv[4] if len(sys.argv) > 4 else "cpu"
 
     print("vocab={} k={} n_iter={} device={}".format(vocab_size, k, n_iter, device))
 
@@ -81,7 +82,7 @@ def check_speed():
     _, y = torch.max(torch.randn_like(x), dim=1)
     ix = y[0]
 
-    args = dict(reduction='sum', ignore_index=ix)
+    args = dict(reduction="sum", ignore_index=ix)
 
     from onmt.modules.sparse_losses import (
         SparsemaxBisectLoss,
@@ -93,7 +94,9 @@ def check_speed():
     sp3 = partial(SparsemaxBisectLoss(n_iter=n_iter, **args), input=x, target=y)
     ts1 = partial(Tsallis15Loss(**args), input=x, target=y)
     ts2 = partial(Tsallis15TopKLoss(k=k, **args), input=x, target=y)
-    ts3 = partial(TsallisBisectLoss(alpha=1.5, n_iter=n_iter, **args), input=x, target=y)
+    ts3 = partial(
+        TsallisBisectLoss(alpha=1.5, n_iter=n_iter, **args), input=x, target=y
+    )
 
     torch.cuda.synchronize()
     torch.cuda.synchronize()
@@ -110,8 +113,9 @@ def check_speed():
     print(((ts1() - ts3()) ** 2).sum())
 
 
-if __name__ == '__main__':
-     import numpy as np
-     from functools import partial
-     import time
-     check_speed()
+if __name__ == "__main__":
+    import numpy as np
+    from functools import partial
+    import time
+
+    check_speed()

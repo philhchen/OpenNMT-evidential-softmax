@@ -47,33 +47,36 @@ class ServerModelError(Exception):
     pass
 
 
-class TranslationServer():
+class TranslationServer:
     def __init__(self):
         self.models = {}
         self.next_id = 0
 
     def start(self, config_file):
-        """Read the config file and pre-/load the models
-        """
+        """Read the config file and pre-/load the models"""
         self.config_file = config_file
         with open(self.config_file) as f:
             self.confs = json.load(f)
 
-        self.models_root = self.confs.get('models_root', './available_models')
+        self.models_root = self.confs.get("models_root", "./available_models")
         for i, conf in enumerate(self.confs["models"]):
             if "models" not in conf:
                 if "model" in conf:
                     # backwards compatibility for confs
                     conf["models"] = [conf["model"]]
                 else:
-                    raise ValueError("""Incorrect config file: missing 'models'
-                                        parameter for model #%d""" % i)
-            kwargs = {'timeout': conf.get('timeout', None),
-                      'load': conf.get('load', None),
-                      'tokenizer_opt': conf.get('tokenizer', None),
-                      'on_timeout': conf.get('on_timeout', None),
-                      'model_root': conf.get('model_root', self.models_root)
-                      }
+                    raise ValueError(
+                        """Incorrect config file: missing 'models'
+                                        parameter for model #%d"""
+                        % i
+                    )
+            kwargs = {
+                "timeout": conf.get("timeout", None),
+                "load": conf.get("load", None),
+                "tokenizer_opt": conf.get("tokenizer", None),
+                "on_timeout": conf.get("on_timeout", None),
+                "model_root": conf.get("model_root", self.models_root),
+            }
             kwargs = {k: v for (k, v) in kwargs.items() if v is not None}
             model_id = conf.get("id", None)
             opt = conf["opt"]
@@ -82,8 +85,8 @@ class TranslationServer():
 
     def clone_model(self, model_id, opt, timeout=-1):
         """Clone a model `model_id`.
-           Different options may be passed. If `opt` is None, it will use the
-           same set of options
+        Different options may be passed. If `opt` is None, it will use the
+        same set of options
         """
         if model_id in self.models:
             if opt is None:
@@ -94,8 +97,7 @@ class TranslationServer():
             raise ServerModelError("No such model '%s'" % str(model_id))
 
     def load_model(self, opt, model_id=None, **model_kwargs):
-        """Loading a model given a set of options
-        """
+        """Loading a model given a set of options"""
         model_id = self.preload_model(opt, model_id=model_id, **model_kwargs)
         load_time = self.models[model_id].load_time
 
@@ -103,7 +105,7 @@ class TranslationServer():
 
     def preload_model(self, opt, model_id=None, **model_kwargs):
         """Preloading the model: updating internal datastructure
-           It will effectively load the model if `load` is set
+        It will effectively load the model if `load` is set
         """
         if model_id is not None:
             if model_id in self.models.keys():
@@ -121,10 +123,10 @@ class TranslationServer():
 
     def run(self, inputs):
         """Translate `inputs`
-           We keep the same format as the Lua version i.e.
-             [{"id": model_id, "src": "sequence to translate"},{ ...}]
+        We keep the same format as the Lua version i.e.
+          [{"id": model_id, "src": "sequence to translate"},{ ...}]
 
-           We use inputs[0]["id"] as the model id
+        We use inputs[0]["id"] as the model id
         """
         model_id = inputs[0].get("id", 0)
         if model_id in self.models and self.models[model_id] is not None:
@@ -135,7 +137,7 @@ class TranslationServer():
 
     def unload_model(self, model_id):
         """Manually unload a model.
-           It will free the memory and cancel the timer
+        It will free the memory and cancel the timer
         """
         if model_id in self.models and self.models[model_id] is not None:
             self.models[model_id].unload()
@@ -143,8 +145,7 @@ class TranslationServer():
             raise ServerModelError("No such model '%s'" % str(model_id))
 
     def list_models(self):
-        """Return the list of available models
-        """
+        """Return the list of available models"""
         models = []
         for _, model in self.models.items():
             models += [model.to_dict()]
@@ -152,20 +153,28 @@ class TranslationServer():
 
 
 class ServerModel:
-    def __init__(self, opt, model_id, tokenizer_opt=None, load=False,
-                 timeout=-1, on_timeout="to_cpu", model_root="./"):
+    def __init__(
+        self,
+        opt,
+        model_id,
+        tokenizer_opt=None,
+        load=False,
+        timeout=-1,
+        on_timeout="to_cpu",
+        model_root="./",
+    ):
         """
-            Args:
-                opt: (dict) options for the Translator
-                model_id: (int) model id
-                tokenizer_opt: (dict) options for the tokenizer or None
-                load: (bool) whether to load the model during __init__
-                timeout: (int) seconds before running `do_timeout`
-                         Negative values means no timeout
-                on_timeout: (str) in ["to_cpu", "unload"] set what to do on
-                            timeout (see function `do_timeout`)
-                model_root: (str) path to the model directory
-                            it must contain de model and tokenizer file
+        Args:
+            opt: (dict) options for the Translator
+            model_id: (int) model id
+            tokenizer_opt: (dict) options for the tokenizer or None
+            load: (bool) whether to load the model during __init__
+            timeout: (int) seconds before running `do_timeout`
+                     Negative values means no timeout
+            on_timeout: (str) in ["to_cpu", "unload"] set what to do on
+                        timeout (see function `do_timeout`)
+            model_root: (str) path to the model directory
+                        it must contain de model and tokenizer file
 
         """
         self.model_root = model_root
@@ -186,8 +195,9 @@ class ServerModel:
             log_file = os.path.join(model_root, self.opt.log_file)
         else:
             log_file = None
-        self.logger = init_logger(log_file=log_file,
-                                  log_file_level=self.opt.log_file_level)
+        self.logger = init_logger(
+            log_file=log_file, log_file_level=self.opt.log_file_level
+        )
 
         self.loading_lock = threading.Event()
         self.loading_lock.set()
@@ -198,32 +208,31 @@ class ServerModel:
 
     def parse_opt(self, opt):
         """Parse the option set passed by the user using `onmt.opts`
-           Args:
-               opt: (dict) options passed by the user
+        Args:
+            opt: (dict) options passed by the user
 
-           Returns:
-               opt: (Namespace) full set of options for the Translator
+        Returns:
+            opt: (Namespace) full set of options for the Translator
         """
         prec_argv = sys.argv
         sys.argv = sys.argv[:1]
         parser = configargparse.ArgumentParser()
         onmt.opts.translate_opts(parser)
 
-        models = opt['models']
+        models = opt["models"]
         if not isinstance(models, (list, tuple)):
             models = [models]
-        opt['models'] = [os.path.join(self.model_root, model)
-                         for model in models]
-        opt['src'] = "dummy_src"
+        opt["models"] = [os.path.join(self.model_root, model) for model in models]
+        opt["src"] = "dummy_src"
 
         for (k, v) in opt.items():
-            if k == 'models':
-                sys.argv += ['-model']
+            if k == "models":
+                sys.argv += ["-model"]
                 sys.argv += [str(model) for model in v]
             elif type(v) == bool:
-                sys.argv += ['-%s' % k]
+                sys.argv += ["-%s" % k]
             else:
-                sys.argv += ['-%s' % k, str(v)]
+                sys.argv += ["-%s" % k, str(v)]
 
         opt = parser.parse_args()
         opt.cuda = opt.gpu > -1
@@ -233,7 +242,7 @@ class ServerModel:
 
     @property
     def loaded(self):
-        return hasattr(self, 'translator')
+        return hasattr(self, "translator")
 
     def load(self):
         self.loading_lock.clear()
@@ -243,9 +252,9 @@ class ServerModel:
         timer.start()
 
         try:
-            self.translator = build_translator(self.opt,
-                                               report_score=False,
-                                               out_file=open(os.devnull, "w"))
+            self.translator = build_translator(
+                self.opt, report_score=False, out_file=open(os.devnull, "w")
+            )
         except RuntimeError as e:
             raise ServerModelError("Runtime Error: %s" % str(e))
 
@@ -254,24 +263,22 @@ class ServerModel:
             self.logger.info("Loading tokenizer")
 
             if "type" not in self.tokenizer_opt:
-                raise ValueError(
-                    "Missing mandatory tokenizer option 'type'")
+                raise ValueError("Missing mandatory tokenizer option 'type'")
 
-            if self.tokenizer_opt['type'] == 'sentencepiece':
+            if self.tokenizer_opt["type"] == "sentencepiece":
                 if "model" not in self.tokenizer_opt:
-                    raise ValueError(
-                        "Missing mandatory tokenizer option 'model'")
+                    raise ValueError("Missing mandatory tokenizer option 'model'")
                 import sentencepiece as spm
+
                 sp = spm.SentencePieceProcessor()
-                model_path = os.path.join(self.model_root,
-                                          self.tokenizer_opt['model'])
+                model_path = os.path.join(self.model_root, self.tokenizer_opt["model"])
                 sp.Load(model_path)
                 self.tokenizer = sp
-            elif self.tokenizer_opt['type'] == 'pyonmttok':
+            elif self.tokenizer_opt["type"] == "pyonmttok":
                 if "params" not in self.tokenizer_opt:
-                    raise ValueError(
-                        "Missing mandatory tokenizer option 'params'")
+                    raise ValueError("Missing mandatory tokenizer option 'params'")
                 import pyonmttok
+
                 if self.tokenizer_opt["mode"] is not None:
                     mode = self.tokenizer_opt["mode"]
                 else:
@@ -280,10 +287,8 @@ class ServerModel:
                 tokenizer_params = dict(self.tokenizer_opt["params"])
                 for key, value in self.tokenizer_opt["params"].items():
                     if key.endswith("path"):
-                        tokenizer_params[key] = os.path.join(
-                            self.model_root, value)
-                tokenizer = pyonmttok.Tokenizer(mode,
-                                                **tokenizer_params)
+                        tokenizer_params[key] = os.path.join(self.model_root, value)
+                tokenizer = pyonmttok.Tokenizer(mode, **tokenizer_params)
                 self.tokenizer = tokenizer
             else:
                 raise ValueError("Invalid value for tokenizer type")
@@ -295,18 +300,17 @@ class ServerModel:
     def run(self, inputs):
         """Translate `inputs` using this model
 
-            Args:
-                inputs: [{"src": "..."},{"src": ...}]
+        Args:
+            inputs: [{"src": "..."},{"src": ...}]
 
-            Returns:
-                result: (list) translations
-                times: (dict) containing times
+        Returns:
+            result: (list) translations
+            times: (dict) containing times
         """
         self.stop_unload_timer()
 
         if not self.running_lock.acquire(blocking=True, timeout=120):
-            raise ServerModelError("Model %d running lock timeout"
-                                   % self.model_id)
+            raise ServerModelError("Model %d running lock timeout" % self.model_id)
 
         timer = Timer()
         timer.start()
@@ -315,11 +319,10 @@ class ServerModel:
 
         if not self.loading_lock.is_set():
             self.logger.info(
-                "Model #%d is being loaded by another thread, waiting"
-                % self.model_id)
+                "Model #%d is being loaded by another thread, waiting" % self.model_id
+            )
             if not self.loading_lock.wait(timeout=30):
-                raise ServerModelError("Model %d loading timeout"
-                                       % self.model_id)
+                raise ServerModelError("Model %d loading timeout" % self.model_id)
 
         else:
             if not self.loaded:
@@ -334,15 +337,15 @@ class ServerModel:
         tail_spaces = []
         sslength = []
         for i, inp in enumerate(inputs):
-            src = inp['src']
+            src = inp["src"]
             if src.strip() == "":
                 head_spaces.append(src)
                 texts.append("")
                 tail_spaces.append("")
             else:
                 whitespaces_before, whitespaces_after = "", ""
-                match_before = re.search(r'^\s+', src)
-                match_after = re.search(r'\s+$', src)
+                match_before = re.search(r"^\s+", src)
+                match_after = re.search(r"\s+$", src)
                 if match_before is not None:
                     whitespaces_before = match_before.group(0)
                 if match_after is not None:
@@ -361,13 +364,14 @@ class ServerModel:
         if len(texts_to_translate) > 0:
             try:
                 scores, predictions = self.translator.translate(
-                    src_data_iter=texts_to_translate,
-                    batch_size=self.opt.batch_size)
+                    src_data_iter=texts_to_translate, batch_size=self.opt.batch_size
+                )
             except (RuntimeError, Exception) as e:
                 err = "Error: %s" % str(e)
                 self.logger.error(err)
-                self.logger.error("repr(text_to_translate): "
-                                  + repr(texts_to_translate))
+                self.logger.error(
+                    "repr(text_to_translate): " + repr(texts_to_translate)
+                )
                 self.logger.error("model: #%s" % self.model_id)
                 self.logger.error("model opt: " + str(self.opt.__dict__))
                 self.logger.error(traceback.format_exc())
@@ -375,29 +379,30 @@ class ServerModel:
                 raise ServerModelError(err)
 
         timer.tick(name="translation")
-        self.logger.info("""Using model #%d\t%d inputs
-               \ttranslation time: %f""" % (self.model_id, len(texts),
-                                            timer.times['translation']))
+        self.logger.info(
+            """Using model #%d\t%d inputs
+               \ttranslation time: %f"""
+            % (self.model_id, len(texts), timer.times["translation"])
+        )
         self.reset_unload_timer()
 
         # NOTE: translator returns lists of `n_best` list
         #       we can ignore that (i.e. flatten lists) only because
         #       we restrict `n_best=1`
-        def flatten_list(_list): return sum(_list, [])
-        results = flatten_list(predictions)
-        scores = [score_tensor.item()
-                  for score_tensor in flatten_list(scores)]
+        def flatten_list(_list):
+            return sum(_list, [])
 
-        results = [self.maybe_detokenize(item)
-                   for item in results]
+        results = flatten_list(predictions)
+        scores = [score_tensor.item() for score_tensor in flatten_list(scores)]
+
+        results = [self.maybe_detokenize(item) for item in results]
 
         # build back results with empty texts
         for i in empty_indices:
             results.insert(i, "")
             scores.insert(i, 0)
 
-        results = ["".join(items)
-                   for items in zip(head_spaces, results, tail_spaces)]
+        results = ["".join(items) for items in zip(head_spaces, results, tail_spaces)]
 
         self.logger.info("Translation Results: %d", len(results))
         self.running_lock.release()
@@ -405,14 +410,13 @@ class ServerModel:
 
     def do_timeout(self):
         """Timeout function that free GPU memory by moving the model to CPU
-           or unloading it; depending on `self.on_timemout` value
+        or unloading it; depending on `self.on_timemout` value
         """
         if self.on_timeout == "unload":
             self.logger.info("Timeout: unloading model %d" % self.model_id)
             self.unload()
         if self.on_timeout == "to_cpu":
-            self.logger.info("Timeout: sending model %d to CPU"
-                             % self.model_id)
+            self.logger.info("Timeout: sending model %d to CPU" % self.model_id)
             self.to_cpu()
 
     def unload(self):
@@ -436,34 +440,34 @@ class ServerModel:
 
     def to_dict(self):
         hide_opt = ["models", "src"]
-        d = {"model_id": self.model_id,
-             "opt": {k: self.user_opt[k] for k in self.user_opt.keys()
-                     if k not in hide_opt},
-             "models": self.user_opt["models"],
-             "loaded": self.loaded,
-             "timeout": self.timeout,
-             }
+        d = {
+            "model_id": self.model_id,
+            "opt": {
+                k: self.user_opt[k] for k in self.user_opt.keys() if k not in hide_opt
+            },
+            "models": self.user_opt["models"],
+            "loaded": self.loaded,
+            "timeout": self.timeout,
+        }
         if self.tokenizer_opt is not None:
             d["tokenizer"] = self.tokenizer_opt
         return d
 
     def to_cpu(self):
-        """Move the model to CPU and clear CUDA cache
-        """
+        """Move the model to CPU and clear CUDA cache"""
         self.translator.model.cpu()
         if self.opt.cuda:
             torch.cuda.empty_cache()
 
     def to_gpu(self):
-        """Move the model to GPU
-        """
+        """Move the model to GPU"""
         torch.cuda.set_device(self.opt.gpu)
         self.translator.model.cuda()
 
     def maybe_tokenize(self, sequence):
         """Tokenize the sequence (or not)
 
-           Same args/returns as `tokenize`
+        Same args/returns as `tokenize`
         """
         if self.tokenizer_opt is not None:
             return self.tokenize(sequence)
@@ -472,11 +476,11 @@ class ServerModel:
     def tokenize(self, sequence):
         """Tokenize a single sequence
 
-            Args:
-                sequence: (str) the sequence to tokenize
+        Args:
+            sequence: (str) the sequence to tokenize
 
-            Returns:
-                tok: (str) the tokenized sequence
+        Returns:
+            tok: (str) the tokenized sequence
 
         """
         if self.tokenizer is None:
@@ -493,16 +497,16 @@ class ServerModel:
     def maybe_detokenize(self, sequence):
         """De-tokenize the sequence (or not)
 
-           Same args/returns as `tokenize`
+        Same args/returns as `tokenize`
         """
-        if self.tokenizer_opt is not None and ''.join(sequence.split()) != '':
+        if self.tokenizer_opt is not None and "".join(sequence.split()) != "":
             return self.detokenize(sequence)
         return sequence
 
     def detokenize(self, sequence):
         """Detokenize a single sequence
 
-           Same args/returns as `tokenize`
+        Same args/returns as `tokenize`
         """
         if self.tokenizer is None:
             raise ValueError("No tokenizer loaded")

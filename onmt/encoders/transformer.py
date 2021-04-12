@@ -6,6 +6,7 @@ import torch.nn as nn
 
 import onmt
 from onmt.encoders.encoder import EncoderBase
+
 # from onmt.utils.misc import aeq
 from onmt.modules.position_ffn import PositionwiseFeedForward
 
@@ -27,7 +28,8 @@ class TransformerEncoderLayer(nn.Module):
         super(TransformerEncoderLayer, self).__init__()
 
         self.self_attn = onmt.modules.MultiHeadedAttention(
-            heads, d_model, dropout=dropout)
+            heads, d_model, dropout=dropout
+        )
         self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout)
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
         self.dropout = nn.Dropout(dropout)
@@ -46,8 +48,7 @@ class TransformerEncoderLayer(nn.Module):
             * outputs `[batch_size x src_len x model_dim]`
         """
         input_norm = self.layer_norm(inputs)
-        context, _ = self.self_attn(input_norm, input_norm, input_norm,
-                                    mask=mask)
+        context, _ = self.self_attn(input_norm, input_norm, input_norm, mask=mask)
         out = self.dropout(context) + inputs
         return self.feed_forward(out)
 
@@ -84,15 +85,17 @@ class TransformerEncoder(EncoderBase):
         * memory_bank `[src_len x batch_size x model_dim]`
     """
 
-    def __init__(self, num_layers, d_model, heads, d_ff,
-                 dropout, embeddings):
+    def __init__(self, num_layers, d_model, heads, d_ff, dropout, embeddings):
         super(TransformerEncoder, self).__init__()
 
         self.num_layers = num_layers
         self.embeddings = embeddings
         self.transformer = nn.ModuleList(
-            [TransformerEncoderLayer(d_model, heads, d_ff, dropout)
-             for _ in range(num_layers)])
+            [
+                TransformerEncoderLayer(d_model, heads, d_ff, dropout)
+                for _ in range(num_layers)
+            ]
+        )
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
 
     def forward(self, src, lengths=None):

@@ -24,8 +24,7 @@ class AverageAttention(nn.Module):
 
         super(AverageAttention, self).__init__()
 
-        self.average_layer = PositionwiseFeedForward(model_dim, model_dim,
-                                                     dropout)
+        self.average_layer = PositionwiseFeedForward(model_dim, model_dim, dropout)
         self.gating_layer = nn.Linear(model_dim * 2, model_dim * 2)
 
     def cumulative_average_mask(self, batch_size, inputs_len):
@@ -45,13 +44,13 @@ class AverageAttention(nn.Module):
 
         triangle = torch.tril(torch.ones(inputs_len, inputs_len))
         weights = torch.ones(1, inputs_len) / torch.arange(
-            1, inputs_len + 1, dtype=torch.float)
+            1, inputs_len + 1, dtype=torch.float
+        )
         mask = triangle * weights.transpose(0, 1)
 
         return mask.unsqueeze(0).expand(batch_size, inputs_len, inputs_len)
 
-    def cumulative_average(self, inputs, mask_or_step,
-                           layer_cache=None, step=None):
+    def cumulative_average(self, inputs, mask_or_step, layer_cache=None, step=None):
         """
         Computes the cumulative average as described in
         https://arxiv.org/abs/1805.00631 -- Equations (1) (5) (6)
@@ -69,8 +68,9 @@ class AverageAttention(nn.Module):
         if layer_cache is not None:
             step = mask_or_step
             device = inputs.device
-            average_attention = (inputs + step *
-                                 layer_cache["prev_g"].to(device)) / (step + 1)
+            average_attention = (inputs + step * layer_cache["prev_g"].to(device)) / (
+                step + 1
+            )
             layer_cache["prev_g"] = average_attention
             return average_attention
         else:
@@ -93,14 +93,18 @@ class AverageAttention(nn.Module):
 
         device = inputs.device
         average_outputs = self.cumulative_average(
-          inputs, self.cumulative_average_mask(batch_size,
-                                               inputs_len).to(device).float()
-          if layer_cache is None else step, layer_cache=layer_cache)
+            inputs,
+            self.cumulative_average_mask(batch_size, inputs_len).to(device).float()
+            if layer_cache is None
+            else step,
+            layer_cache=layer_cache,
+        )
         average_outputs = self.average_layer(average_outputs)
-        gating_outputs = self.gating_layer(torch.cat((inputs,
-                                                      average_outputs), -1))
+        gating_outputs = self.gating_layer(torch.cat((inputs, average_outputs), -1))
         input_gate, forget_gate = torch.chunk(gating_outputs, 2, dim=2)
-        gating_outputs = torch.sigmoid(input_gate) * inputs + \
-            torch.sigmoid(forget_gate) * average_outputs
+        gating_outputs = (
+            torch.sigmoid(input_gate) * inputs
+            + torch.sigmoid(forget_gate) * average_outputs
+        )
 
         return gating_outputs, average_outputs

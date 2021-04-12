@@ -112,18 +112,24 @@ class Statistics(object):
         total_elapsed_time = time.time() - start
         eta = (num_steps * total_elapsed_time) // step
         logger.info(
-            ("Step %2d/%5d; acc: %6.2f; ppl: %5.2f; xent: %4.2f; " +
-             "lr: %7.5f; %3.0f/%3.0f tok/s; Time elapsed: %s sec " +
-             "ETA: %s")
-            % (step, num_steps,
-               self.accuracy(),
-               self.ppl(),
-               self.xent(),
-               learning_rate,
-               self.n_src_words / (t + 1e-5),
-               self.n_words / (t + 1e-5),
-               time.strftime("%d:%H:%M:%S", time.gmtime(total_elapsed_time)),
-               time.strftime("%d:%H:%M:%S", time.gmtime(eta))))
+            (
+                "Step %2d/%5d; acc: %6.2f; ppl: %5.2f; xent: %4.2f; "
+                + "lr: %7.5f; %3.0f/%3.0f tok/s; Time elapsed: %s sec "
+                + "ETA: %s"
+            )
+            % (
+                step,
+                num_steps,
+                self.accuracy(),
+                self.ppl(),
+                self.xent(),
+                learning_rate,
+                self.n_src_words / (t + 1e-5),
+                self.n_words / (t + 1e-5),
+                time.strftime("%d:%H:%M:%S", time.gmtime(total_elapsed_time)),
+                time.strftime("%d:%H:%M:%S", time.gmtime(eta)),
+            )
+        )
         sys.stdout.flush()
 
     def log_tensorboard(self, prefix, writer, learning_rate, step):

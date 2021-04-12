@@ -8,10 +8,7 @@ from onmt.modules.root_finding import (
     tsallis_bisect,
 )
 
-from onmt.modules.sparse_activations import(
-    sparsemax,
-    tsallis15
-)
+from onmt.modules.sparse_activations import sparsemax, tsallis15
 
 
 def test_sparsemax():
@@ -38,7 +35,7 @@ def test_sparsemax_grad():
         gradcheck(sparsemax_bisect, (x,), eps=1e-5)
 
 
-@pytest.mark.parametrize('alpha', (1.2, 1.5, 1.75, 2.25))
+@pytest.mark.parametrize("alpha", (1.2, 1.5, 1.75, 2.25))
 def test_tsallis_grad(alpha):
 
     for _ in range(10):

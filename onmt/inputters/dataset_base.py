@@ -7,24 +7,24 @@ import torchtext
 
 import onmt
 
-PAD_WORD = '<blank>'
-UNK_WORD = '<unk>'
+PAD_WORD = "<blank>"
+UNK_WORD = "<unk>"
 UNK = 0
-BOS_WORD = '<s>'
-EOS_WORD = '</s>'
+BOS_WORD = "<s>"
+EOS_WORD = "</s>"
 
 
-class DatasetBase(torchtext.legacy.data.Dataset):
+class DatasetBase(torchtext.data.Dataset):
     """
     A dataset basically supports iteration over all the examples
     it contains. We currently have 3 datasets inheriting this base
     for 3 types of corpus respectively: "text", "img", "audio".
 
-    Internally it initializes an `torchtext.legacy.data.Dataset` object with
+    Internally it initializes an `torchtext.data.Dataset` object with
     the following attributes:
 
-     `examples`: a sequence of `torchtext.legacy.data.Example` objects.
-     `fields`: a dictionary associating str keys with `torchtext.legacy.data.Field`
+     `examples`: a sequence of `torchtext.data.Example` objects.
+     `fields`: a dictionary associating str keys with `torchtext.data.Field`
         objects, and not necessarily having the same keys as the input fields.
     """
 
@@ -35,15 +35,17 @@ class DatasetBase(torchtext.legacy.data.Dataset):
         self.__dict__.update(_d)
 
     def load_fields(self, vocab_dict):
-        """ Load fields from vocab.pt, and set the `fields` attribute.
+        """Load fields from vocab.pt, and set the `fields` attribute.
 
         Args:
             vocab_dict (dict): a dict of loaded vocab from vocab.pt file.
         """
         fields = onmt.inputters.inputter.load_fields_from_vocab(
-            vocab_dict.items(), self.data_type)
-        self.fields = dict([(k, f) for (k, f) in fields.items()
-                            if k in self.examples[0].__dict__])
+            vocab_dict.items(), self.data_type
+        )
+        self.fields = dict(
+            [(k, f) for (k, f) in fields.items() if k in self.examples[0].__dict__]
+        )
 
     @staticmethod
     def extract_text_features(tokens):
@@ -63,8 +65,9 @@ class DatasetBase(torchtext.legacy.data.Dataset):
         n_feats = None
         for token in tokens:
             split_token = token.split(u"￨")
-            assert all([special != split_token[0] for special in specials]), \
-                "Dataset cannot contain Special Tokens"
+            assert all(
+                [special != split_token[0] for special in specials]
+            ), "Dataset cannot contain Special Tokens"
 
             if split_token[0]:
                 words += [split_token[0]]
@@ -73,8 +76,9 @@ class DatasetBase(torchtext.legacy.data.Dataset):
                 if n_feats is None:
                     n_feats = len(split_token)
                 else:
-                    assert len(split_token) == n_feats, \
-                        "all words must have the same number of features"
+                    assert (
+                        len(split_token) == n_feats
+                    ), "all words must have the same number of features"
         features = list(zip(*features))
         return tuple(words), features, n_feats - 1
 
@@ -109,13 +113,13 @@ class DatasetBase(torchtext.legacy.data.Dataset):
             data: the data to be set as the value of the attributes of
                 the to-be-created `Example`, associating with respective
                 `Field` objects with same key.
-            fields: a dict of `torchtext.legacy.data.Field` objects. The keys
+            fields: a dict of `torchtext.data.Field` objects. The keys
                 are attributes of the to-be-created `Example`.
 
         Returns:
             the created `Example` object.
         """
-        ex = torchtext.legacy.data.Example()
+        ex = torchtext.data.Example()
         for (name, field), val in zip(fields, data):
             if field is not None:
                 setattr(ex, name, field.preprocess(val))

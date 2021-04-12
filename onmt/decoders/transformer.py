@@ -24,21 +24,21 @@ class TransformerDecoderLayer(nn.Module):
       self_attn_type (string): type of self-attention scaled-dot, average
     """
 
-    def __init__(self, d_model, heads, d_ff, dropout,
-                 self_attn_type="scaled-dot"):
+    def __init__(self, d_model, heads, d_ff, dropout, self_attn_type="scaled-dot"):
         super(TransformerDecoderLayer, self).__init__()
 
         self.self_attn_type = self_attn_type
 
         if self_attn_type == "scaled-dot":
             self.self_attn = onmt.modules.MultiHeadedAttention(
-                heads, d_model, dropout=dropout)
+                heads, d_model, dropout=dropout
+            )
         elif self_attn_type == "average":
-            self.self_attn = onmt.modules.AverageAttention(
-                d_model, dropout=dropout)
+            self.self_attn = onmt.modules.AverageAttention(d_model, dropout=dropout)
 
         self.context_attn = onmt.modules.MultiHeadedAttention(
-            heads, d_model, dropout=dropout)
+            heads, d_model, dropout=dropout
+        )
         self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout)
         self.layer_norm_1 = nn.LayerNorm(d_model, eps=1e-6)
         self.layer_norm_2 = nn.LayerNorm(d_model, eps=1e-6)
@@ -47,10 +47,17 @@ class TransformerDecoderLayer(nn.Module):
         mask = self._get_attn_subsequent_mask(MAX_SIZE)
         # Register self.mask as a buffer in TransformerDecoderLayer, so
         # it gets TransformerDecoderLayer's cuda behavior automatically.
-        self.register_buffer('mask', mask)
+        self.register_buffer("mask", mask)
 
-    def forward(self, inputs, memory_bank, src_pad_mask, tgt_pad_mask,
-                layer_cache=None, step=None):
+    def forward(
+        self,
+        inputs,
+        memory_bank,
+        src_pad_mask,
+        tgt_pad_mask,
+        layer_cache=None,
+        step=None,
+    ):
         """
         Args:
             inputs (`FloatTensor`): `[batch_size x 1 x model_dim]`
@@ -67,28 +74,39 @@ class TransformerDecoderLayer(nn.Module):
         """
         dec_mask = None
         if step is None:
-            dec_mask = torch.gt(tgt_pad_mask +
-                                self.mask[:, :tgt_pad_mask.size(-1),
-                                          :tgt_pad_mask.size(-1)], 0)
+            dec_mask = torch.gt(
+                tgt_pad_mask
+                + self.mask[:, : tgt_pad_mask.size(-1), : tgt_pad_mask.size(-1)],
+                0,
+            )
 
         input_norm = self.layer_norm_1(inputs)
 
         if self.self_attn_type == "scaled-dot":
-            query, attn = self.self_attn(input_norm, input_norm, input_norm,
-                                         mask=dec_mask,
-                                         layer_cache=layer_cache,
-                                         type="self")
+            query, attn = self.self_attn(
+                input_norm,
+                input_norm,
+                input_norm,
+                mask=dec_mask,
+                layer_cache=layer_cache,
+                type="self",
+            )
         elif self.self_attn_type == "average":
-            query, attn = self.self_attn(input_norm, mask=dec_mask,
-                                         layer_cache=layer_cache, step=step)
+            query, attn = self.self_attn(
+                input_norm, mask=dec_mask, layer_cache=layer_cache, step=step
+            )
 
         query = self.drop(query) + inputs
 
         query_norm = self.layer_norm_2(query)
-        mid, attn = self.context_attn(memory_bank, memory_bank, query_norm,
-                                      mask=src_pad_mask,
-                                      layer_cache=layer_cache,
-                                      type="context")
+        mid, attn = self.context_attn(
+            memory_bank,
+            memory_bank,
+            query_norm,
+            mask=src_pad_mask,
+            layer_cache=layer_cache,
+            type="context",
+        )
         output = self.feed_forward(self.drop(mid) + query)
 
         return output, attn
@@ -106,7 +124,7 @@ class TransformerDecoderLayer(nn.Module):
             * subsequent_mask `[1 x size x size]`
         """
         attn_shape = (1, size, size)
-        subsequent_mask = np.triu(np.ones(attn_shape), k=1).astype('uint8')
+        subsequent_mask = np.triu(np.ones(attn_shape), k=1).astype("uint8")
         subsequent_mask = torch.from_numpy(subsequent_mask)
         return subsequent_mask
 
@@ -139,14 +157,26 @@ class TransformerDecoder(nn.Module):
        embeddings (:obj:`onmt.modules.Embeddings`):
           embeddings to use, should have positional encodings
        attn_type (str): if using a seperate copy attention
+       attn_func (str): if using a seperate copy attention
     """
 
-    def __init__(self, num_layers, d_model, heads, d_ff, attn_type,
-                 copy_attn, self_attn_type, dropout, embeddings):
+    def __init__(
+        self,
+        num_layers,
+        d_model,
+        heads,
+        d_ff,
+        attn_type,
+        attn_func,
+        copy_attn,
+        self_attn_type,
+        dropout,
+        embeddings,
+    ):
         super(TransformerDecoder, self).__init__()
 
         # Basic attributes.
-        self.decoder_type = 'transformer'
+        self.decoder_type = "transformer"
         self.num_layers = num_layers
         self.embeddings = embeddings
         self.self_attn_type = self_attn_type
@@ -156,16 +186,21 @@ class TransformerDecoder(nn.Module):
 
         # Build TransformerDecoder.
         self.transformer_layers = nn.ModuleList(
-            [TransformerDecoderLayer(d_model, heads, d_ff, dropout,
-             self_attn_type=self_attn_type)
-             for _ in range(num_layers)])
+            [
+                TransformerDecoderLayer(
+                    d_model, heads, d_ff, dropout, self_attn_type=self_attn_type
+                )
+                for _ in range(num_layers)
+            ]
+        )
 
         # TransformerDecoder has its own attention mechanism.
         # Set up a separated copy attention layer, if needed.
         self._copy = False
         if copy_attn:
             self.copy_attn = onmt.modules.GlobalAttention(
-                d_model, attn_type=attn_type)
+                d_model, attn_type=attn_type, attn_func=attn_func
+            )
             self._copy = True
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
 
@@ -228,8 +263,11 @@ class TransformerDecoder(nn.Module):
                 tgt_pad_mask,
                 layer_cache=(
                     self.state["cache"]["layer_{}".format(i)]
-                    if step is not None else None),
-                step=step)
+                    if step is not None
+                    else None
+                ),
+                step=step,
+            )
 
         output = self.layer_norm(output)
 
@@ -250,10 +288,7 @@ class TransformerDecoder(nn.Module):
         depth = memory_bank.size(-1)
 
         for l in range(num_layers):
-            layer_cache = {
-                "memory_keys": None,
-                "memory_values": None
-            }
+            layer_cache = {"memory_keys": None, "memory_values": None}
             if self_attn_type == "scaled-dot":
                 layer_cache["self_keys"] = None
                 layer_cache["self_values"] = None

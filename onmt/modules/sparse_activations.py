@@ -85,7 +85,6 @@ def _threshold_and_support_topk(input, dim=0, k=100):
 
 
 class SparsemaxFunction(Function):
-
     @staticmethod
     def forward(ctx, input, dim=0):
         """
@@ -118,7 +117,6 @@ class SparsemaxFunction(Function):
 
 
 class SparsemaxFunctionTopK(Function):
-
     @staticmethod
     def forward(ctx, input, dim=0, k=100):
         """
@@ -147,7 +145,6 @@ sparsemax_topk = SparsemaxFunctionTopK.apply
 
 
 class Sparsemax(nn.Module):
-
     def __init__(self, dim=0):
         self.dim = dim
         super(Sparsemax, self).__init__()
@@ -157,7 +154,6 @@ class Sparsemax(nn.Module):
 
 
 class SparsemaxTopK(nn.Module):
-
     def __init__(self, dim=0, k=100):
         self.dim = dim
         self.k = k
@@ -168,7 +164,6 @@ class SparsemaxTopK(nn.Module):
 
 
 class LogSparsemax(nn.Module):
-
     def __init__(self, dim=0):
         self.dim = dim
         super(LogSparsemax, self).__init__()
@@ -178,7 +173,6 @@ class LogSparsemax(nn.Module):
 
 
 class LogSparsemaxTopK(nn.Module):
-
     def __init__(self, dim=0, k=100):
         self.dim = dim
         self.k = k
@@ -258,7 +252,7 @@ class Tsallis15Function(Function):
 
     @staticmethod
     def backward(ctx, dY):
-        Y, = ctx.saved_tensors
+        (Y,) = ctx.saved_tensors
         gppr = Y.sqrt()  # = 1 / g'' (Y)
         dX = dY * gppr
         q = dX.sum(ctx.dim) / gppr.sum(ctx.dim)
@@ -292,7 +286,6 @@ tsallis15_topk = Tsallis15TopKFunction.apply
 
 
 class Tsallis15(torch.nn.Module):
-
     def __init__(self, dim=0):
         self.dim = dim
         super(Tsallis15, self).__init__()
@@ -302,7 +295,6 @@ class Tsallis15(torch.nn.Module):
 
 
 class LogTsallis15(torch.nn.Module):
-
     def __init__(self, dim=0):
         self.dim = dim
         super(LogTsallis15, self).__init__()
@@ -312,7 +304,6 @@ class LogTsallis15(torch.nn.Module):
 
 
 class Tsallis15TopK(torch.nn.Module):
-
     def __init__(self, dim=0, k=100):
         self.dim = dim
         self.k = k
@@ -323,7 +314,6 @@ class Tsallis15TopK(torch.nn.Module):
 
 
 class LogTsallis15TopK(torch.nn.Module):
-
     def __init__(self, dim=0, k=100):
         self.dim = dim
         self.k = k
@@ -342,7 +332,7 @@ class LogTsallisBisect(nn.Module):
     def forward(self, X):
         assert X.dim() == 2
 
-        p_star =  tsallis_bisect(X, self.alpha, self.n_iter)
+        p_star = tsallis_bisect(X, self.alpha, self.n_iter)
         p_star /= p_star.sum(dim=1).unsqueeze(dim=1)
 
         return torch.log(p_star)
@@ -364,7 +354,10 @@ class LogSparsemaxBisect(nn.Module):
 
 INF = 1e6
 
-def log_sparsesoftmax(input: torch.Tensor, dim: int, train: bool = True) -> torch.Tensor:
+
+def log_sparsesoftmax(
+    input: torch.Tensor, dim: int, train: bool = True
+) -> torch.Tensor:
     mask = input < torch.mean(input, dim=dim, keepdim=True)
     mask_offset = mask * (INF if self.train else float("Inf"))
     log_probs = F.log_softmax(input - mask_offset, dim=dim)
@@ -383,7 +376,7 @@ class LogSparseSoftmax(torch.nn.Module):
         super(LogSparseSoftmax, self).__init__()
         self.dim = dim
         self.train = train
-    
+
     def forward(self, X: torch.Tensor) -> torch.Tensor:
         return log_sparsesoftmax(X, self.dim, self.train)
 
@@ -393,17 +386,19 @@ class SparseSoftmax(torch.nn.Module):
         super(SparseSoftmax, self).__init__()
         self.dim = dim
         self.train = train
-    
+
     def forward(self, X: torch.Tensor) -> torch.Tensor:
         return sparsesoftmax(X, self.dim, self.train)
 
 
 class SparseSoftmaxLoss(torch.nn.Module):
-    def __init__(self, reduction: str = 'none', dim: int = -1):
+    def __init__(self, reduction: str = "none", dim: int = -1):
         super(SparseSoftmaxLoss, self).__init__()
         self.log_sparse_softmax = LogSparseSoftmax(dim)
         self.reduction = reduction
         self.dim = dim
-    
+
     def forward(self, input: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-        return F.nll_loss(self.log_sparse_softmax(input), target, reduction=self.reduction)
+        return F.nll_loss(
+            self.log_sparse_softmax(input), target, reduction=self.reduction
+        )

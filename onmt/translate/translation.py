@@ -21,8 +21,7 @@ class TranslationBuilder(object):
        has_tgt (bool): will the batch have gold targets
     """
 
-    def __init__(self, data, fields, n_best=1, replace_unk=False,
-                 has_tgt=False):
+    def __init__(self, data, fields, n_best=1, replace_unk=False, has_tgt=False):
         self.data = data
         self.fields = fields
         self.n_best = n_best
@@ -49,22 +48,30 @@ class TranslationBuilder(object):
 
     def from_batch(self, translation_batch):
         batch = translation_batch["batch"]
-        assert(len(translation_batch["gold_score"]) ==
-               len(translation_batch["predictions"]))
+        assert len(translation_batch["gold_score"]) == len(
+            translation_batch["predictions"]
+        )
         batch_size = batch.batch_size
 
-        preds, pred_score, attn, gold_score, indices = list(zip(
-            *sorted(zip(translation_batch["predictions"],
+        preds, pred_score, attn, gold_score, indices = list(
+            zip(
+                *sorted(
+                    zip(
+                        translation_batch["predictions"],
                         translation_batch["scores"],
                         translation_batch["attention"],
                         translation_batch["gold_score"],
-                        batch.indices.data),
-                    key=lambda x: x[-1])))
+                        batch.indices.data,
+                    ),
+                    key=lambda x: x[-1],
+                )
+            )
+        )
 
         # Sorting
         inds, perm = torch.sort(batch.indices.data)
         data_type = self.data.data_type
-        if data_type == 'text':
+        if data_type == "text":
             src = batch.src[0].data.index_select(1, perm)
         else:
             src = None
@@ -76,29 +83,43 @@ class TranslationBuilder(object):
 
         translations = []
         for b in range(batch_size):
-            if data_type == 'text':
-                src_vocab = self.data.src_vocabs[inds[b]] \
-                    if self.data.src_vocabs else None
+            if data_type == "text":
+                src_vocab = (
+                    self.data.src_vocabs[inds[b]] if self.data.src_vocabs else None
+                )
                 src_raw = self.data.examples[inds[b]].src
             else:
                 src_vocab = None
                 src_raw = None
-            pred_sents = [self._build_target_tokens(
-                src[:, b] if src is not None else None,
-                src_vocab, src_raw,
-                preds[b][n], attn[b][n])
-                for n in range(self.n_best)]
+            pred_sents = [
+                self._build_target_tokens(
+                    src[:, b] if src is not None else None,
+                    src_vocab,
+                    src_raw,
+                    preds[b][n],
+                    attn[b][n],
+                )
+                for n in range(self.n_best)
+            ]
             gold_sent = None
             if tgt is not None:
                 gold_sent = self._build_target_tokens(
                     src[:, b] if src is not None else None,
-                    src_vocab, src_raw,
-                    tgt[1:, b] if tgt is not None else None, None)
+                    src_vocab,
+                    src_raw,
+                    tgt[1:, b] if tgt is not None else None,
+                    None,
+                )
 
-            translation = Translation(src[:, b] if src is not None else None,
-                                      src_raw, pred_sents,
-                                      attn[b], pred_score[b], gold_sent,
-                                      gold_score[b])
+            translation = Translation(
+                src[:, b] if src is not None else None,
+                src_raw,
+                pred_sents,
+                attn[b],
+                pred_score[b],
+                gold_sent,
+                gold_score[b],
+            )
             translations.append(translation)
 
         return translations
@@ -120,8 +141,9 @@ class Translation(object):
 
     """
 
-    def __init__(self, src, src_raw, pred_sents,
-                 attn, pred_scores, tgt_sent, gold_score):
+    def __init__(
+        self, src, src_raw, pred_sents, attn, pred_scores, tgt_sent, gold_score
+    ):
         self.src = src
         self.src_raw = src_raw
         self.pred_sents = pred_sents
@@ -135,20 +157,20 @@ class Translation(object):
         Log translation.
         """
 
-        output = '\nSENT {}: {}\n'.format(sent_number, self.src_raw)
+        output = "\nSENT {}: {}\n".format(sent_number, self.src_raw)
 
         best_pred = self.pred_sents[0]
         best_score = self.pred_scores[0]
-        pred_sent = ' '.join(best_pred)
-        output += 'PRED {}: {}\n'.format(sent_number, pred_sent)
+        pred_sent = " ".join(best_pred)
+        output += "PRED {}: {}\n".format(sent_number, pred_sent)
         output += "PRED SCORE: {:.7f}\n".format(best_score)
 
         if self.gold_sent is not None:
-            tgt_sent = ' '.join(self.gold_sent)
-            output += 'GOLD {}: {}\n'.format(sent_number, tgt_sent)
-            output += ("GOLD SCORE: {:.7f}\n".format(self.gold_score))
+            tgt_sent = " ".join(self.gold_sent)
+            output += "GOLD {}: {}\n".format(sent_number, tgt_sent)
+            output += "GOLD SCORE: {:.7f}\n".format(self.gold_score)
         if len(self.pred_sents) > 1:
-            output += '\nBEST HYP:\n'
+            output += "\nBEST HYP:\n"
             for score, sent in zip(self.pred_scores, self.pred_sents):
                 output += "[{:.7f}] {}\n".format(score, sent)
 
