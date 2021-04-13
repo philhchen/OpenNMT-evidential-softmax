@@ -42,22 +42,24 @@ def build_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
     word_padding_idx = word_dict.stoi[inputters.PAD_WORD]
     num_word_embeddings = len(word_dict)
 
-    feats_padding_idx = [feat_dict.stoi[inputters.PAD_WORD]
-                         for feat_dict in feature_dicts]
-    num_feat_embeddings = [len(feat_dict) for feat_dict in
-                           feature_dicts]
+    feats_padding_idx = [
+        feat_dict.stoi[inputters.PAD_WORD] for feat_dict in feature_dicts
+    ]
+    num_feat_embeddings = [len(feat_dict) for feat_dict in feature_dicts]
 
-    return Embeddings(word_vec_size=embedding_dim,
-                      position_encoding=opt.position_encoding,
-                      feat_merge=opt.feat_merge,
-                      feat_vec_exponent=opt.feat_vec_exponent,
-                      feat_vec_size=opt.feat_vec_size,
-                      dropout=opt.dropout,
-                      word_padding_idx=word_padding_idx,
-                      feat_padding_idx=feats_padding_idx,
-                      word_vocab_size=num_word_embeddings,
-                      feat_vocab_sizes=num_feat_embeddings,
-                      sparse=opt.optim == "sparseadam")
+    return Embeddings(
+        word_vec_size=embedding_dim,
+        position_encoding=opt.position_encoding,
+        feat_merge=opt.feat_merge,
+        feat_vec_exponent=opt.feat_vec_exponent,
+        feat_vec_size=opt.feat_vec_size,
+        dropout=opt.dropout,
+        word_padding_idx=word_padding_idx,
+        feat_padding_idx=feats_padding_idx,
+        word_vocab_size=num_word_embeddings,
+        feat_vocab_sizes=num_feat_embeddings,
+        sparse=opt.optim == "sparseadam",
+    )
 
 
 def build_encoder(opt, embeddings):
@@ -68,20 +70,35 @@ def build_encoder(opt, embeddings):
         embeddings (Embeddings): vocab embeddings for this encoder.
     """
     if opt.encoder_type == "transformer":
-        return TransformerEncoder(opt.enc_layers, opt.enc_rnn_size,
-                                  opt.heads, opt.transformer_ff,
-                                  opt.dropout, embeddings)
+        return TransformerEncoder(
+            opt.enc_layers,
+            opt.enc_rnn_size,
+            opt.heads,
+            opt.transformer_ff,
+            opt.dropout,
+            embeddings,
+        )
     elif opt.encoder_type == "cnn":
-        return CNNEncoder(opt.enc_layers, opt.enc_rnn_size,
-                          opt.cnn_kernel_width,
-                          opt.dropout, embeddings)
+        return CNNEncoder(
+            opt.enc_layers,
+            opt.enc_rnn_size,
+            opt.cnn_kernel_width,
+            opt.dropout,
+            embeddings,
+        )
     elif opt.encoder_type == "mean":
         return MeanEncoder(opt.enc_layers, embeddings)
     else:
         # "rnn" or "brnn"
-        return RNNEncoder(opt.rnn_type, opt.brnn, opt.enc_layers,
-                          opt.enc_rnn_size, opt.dropout, embeddings,
-                          opt.bridge)
+        return RNNEncoder(
+            opt.rnn_type,
+            opt.brnn,
+            opt.enc_layers,
+            opt.enc_rnn_size,
+            opt.dropout,
+            embeddings,
+            opt.bridge,
+        )
 
 
 def build_decoder(opt, embeddings):
@@ -92,53 +109,72 @@ def build_decoder(opt, embeddings):
         embeddings (Embeddings): vocab embeddings for this decoder.
     """
     if opt.decoder_type == "transformer":
-        return TransformerDecoder(opt.dec_layers, opt.dec_rnn_size,
-                                  opt.heads, opt.transformer_ff,
-                                  opt.global_attention, opt.copy_attn,
-                                  opt.self_attn_type,
-                                  opt.dropout, embeddings)
+        return TransformerDecoder(
+            opt.dec_layers,
+            opt.dec_rnn_size,
+            opt.heads,
+            opt.transformer_ff,
+            opt.global_attention,
+            opt.copy_attn,
+            opt.self_attn_type,
+            opt.dropout,
+            embeddings,
+        )
     elif opt.decoder_type == "cnn":
-        return CNNDecoder(opt.dec_layers, opt.dec_rnn_size,
-                          opt.global_attention, opt.copy_attn,
-                          opt.cnn_kernel_width, opt.dropout,
-                          embeddings)
+        return CNNDecoder(
+            opt.dec_layers,
+            opt.dec_rnn_size,
+            opt.global_attention,
+            opt.copy_attn,
+            opt.cnn_kernel_width,
+            opt.dropout,
+            embeddings,
+        )
     elif opt.input_feed:
-        return InputFeedRNNDecoder(opt.rnn_type, opt.brnn,
-                                   opt.dec_layers, opt.dec_rnn_size,
-                                   opt.global_attention,
-                                   opt.global_attention_function,
-                                   opt.coverage_attn,
-                                   opt.context_gate,
-                                   opt.copy_attn,
-                                   opt.dropout,
-                                   embeddings,
-                                   opt.reuse_copy_attn,
-                                   opt.global_attention_alpha,
-                                   opt.global_attention_bisect_iter)
+        return InputFeedRNNDecoder(
+            opt.rnn_type,
+            opt.brnn,
+            opt.dec_layers,
+            opt.dec_rnn_size,
+            opt.global_attention,
+            opt.global_attention_function,
+            opt.coverage_attn,
+            opt.context_gate,
+            opt.copy_attn,
+            opt.dropout,
+            embeddings,
+            opt.reuse_copy_attn,
+            opt.global_attention_alpha,
+            opt.global_attention_bisect_iter,
+        )
     else:
-        return StdRNNDecoder(opt.rnn_type, opt.brnn,
-                             opt.dec_layers, opt.dec_rnn_size,
-                             opt.global_attention,
-                             opt.global_attention_function,
-                             opt.coverage_attn,
-                             opt.context_gate,
-                             opt.copy_attn,
-                             opt.dropout,
-                             embeddings,
-                             opt.reuse_copy_attn,
-                             opt.global_attention_alpha,
-                             opt.global_attention_bisect_iter)
+        return StdRNNDecoder(
+            opt.rnn_type,
+            opt.brnn,
+            opt.dec_layers,
+            opt.dec_rnn_size,
+            opt.global_attention,
+            opt.global_attention_function,
+            opt.coverage_attn,
+            opt.context_gate,
+            opt.copy_attn,
+            opt.dropout,
+            embeddings,
+            opt.reuse_copy_attn,
+            opt.global_attention_alpha,
+            opt.global_attention_bisect_iter,
+        )
 
 
 def load_test_model(opt, dummy_opt, model_path=None):
     if model_path is None:
         model_path = opt.models[0]
-    checkpoint = torch.load(model_path,
-                            map_location=lambda storage, loc: storage)
+    checkpoint = torch.load(model_path, map_location=lambda storage, loc: storage)
     fields = inputters.load_fields_from_vocab(
-        checkpoint['vocab'], data_type=opt.data_type)
+        checkpoint["vocab"], data_type=opt.data_type
+    )
 
-    model_opt = checkpoint['opt']
+    model_opt = checkpoint["opt"]
 
     for arg in dummy_opt:
         if arg not in model_opt:
@@ -146,18 +182,20 @@ def load_test_model(opt, dummy_opt, model_path=None):
     model = build_base_model(model_opt, fields, use_gpu(opt), checkpoint)
 
     # now build the generator
-    alpha_lookup = {'softmax': 1.0, 'tsallis15': 1.5, 'sparsemax': 2.0}
-    gen_alpha = alpha_lookup.get(model_opt.generator_function,
-                                 model_opt.loss_alpha)
-    assert opt.k == 0 or opt.bisect_iter == 0, \
-        "Bisection and topk are mutually exclusive ! !"
+    alpha_lookup = {"softmax": 1.0, "tsallis15": 1.5, "sparsemax": 2.0}
+    gen_alpha = alpha_lookup.get(model_opt.generator_function, model_opt.loss_alpha)
+    assert (
+        opt.k == 0 or opt.bisect_iter == 0
+    ), "Bisection and topk are mutually exclusive ! !"
     if gen_alpha == 1.0:
         gen_func = nn.LogSoftmax(dim=-1)
     elif gen_alpha == 2.0:
         if opt.k > 0:
             gen_func = onmt.modules.sparse_activations.LogSparsemaxTopK(dim=-1, k=opt.k)
         elif opt.bisect_iter > 0:
-            gen_func = onmt.modules.sparse_activations.LogSparsemaxBisect(n_iter=opt.bisect_iter)
+            gen_func = onmt.modules.sparse_activations.LogSparsemaxBisect(
+                n_iter=opt.bisect_iter
+            )
         else:
             gen_func = onmt.modules.sparse_activations.LogSparsemax(dim=-1)
     elif gen_alpha == 1.5 and opt.bisect_iter == 0:
@@ -169,15 +207,19 @@ def load_test_model(opt, dummy_opt, model_path=None):
         # generic tsallis with bisection
         assert opt.bisect_iter > 0, "Must use bisection with alpha != 1,1.5,2"
         gen_func = onmt.modules.sparse_activations.LogTsallisBisect(
-            alpha=gen_alpha, n_iter=opt.bisect_iter)
+            alpha=gen_alpha, n_iter=opt.bisect_iter
+        )
 
     # if model.generator is a Sequential, this unpacks the linear layer from
     # inside it so it can be combined with the translation-time output
     # function.
     # In practice model.generator is always an nn.Sequential instance, but
     # it should work if you just replace it with a linear layer.
-    gen_weights = model.generator[0] if \
-        isinstance(model.generator, nn.Sequential) else model.generator
+    gen_weights = (
+        model.generator[0]
+        if isinstance(model.generator, nn.Sequential)
+        else model.generator
+    )
 
     generator = nn.Sequential(gen_weights, gen_func)
     model.generator = generator
@@ -199,59 +241,73 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
     Returns:
         the NMTModel.
     """
-    assert model_opt.model_type in ["text", "img", "audio"], \
-        ("Unsupported model type %s" % (model_opt.model_type))
+    assert model_opt.model_type in [
+        "text",
+        "img",
+        "audio",
+    ], "Unsupported model type %s" % (model_opt.model_type)
 
     # for backward compatibility
     if model_opt.rnn_size != -1:
         model_opt.enc_rnn_size = model_opt.rnn_size
         model_opt.dec_rnn_size = model_opt.rnn_size
-        if model_opt.model_type == 'text' and \
-           model_opt.enc_rnn_size != model_opt.dec_rnn_size:
-                raise AssertionError("""We do not support different encoder and
-                                     decoder rnn sizes for translation now.""")
+        if (
+            model_opt.model_type == "text"
+            and model_opt.enc_rnn_size != model_opt.dec_rnn_size
+        ):
+            raise AssertionError(
+                """We do not support different encoder and
+                                     decoder rnn sizes for translation now."""
+            )
 
     # Build encoder.
     if model_opt.model_type == "text":
         src_dict = fields["src"].vocab
-        feature_dicts = inputters.collect_feature_vocabs(fields, 'src')
+        feature_dicts = inputters.collect_feature_vocabs(fields, "src")
         src_embeddings = build_embeddings(model_opt, src_dict, feature_dicts)
         encoder = build_encoder(model_opt, src_embeddings)
     elif model_opt.model_type == "img":
-        if ("image_channel_size" not in model_opt.__dict__):
+        if "image_channel_size" not in model_opt.__dict__:
             image_channel_size = 3
         else:
             image_channel_size = model_opt.image_channel_size
 
-        encoder = ImageEncoder(model_opt.enc_layers,
-                               model_opt.brnn,
-                               model_opt.enc_rnn_size,
-                               model_opt.dropout,
-                               image_channel_size)
+        encoder = ImageEncoder(
+            model_opt.enc_layers,
+            model_opt.brnn,
+            model_opt.enc_rnn_size,
+            model_opt.dropout,
+            image_channel_size,
+        )
     elif model_opt.model_type == "audio":
-        encoder = AudioEncoder(model_opt.rnn_type,
-                               model_opt.enc_layers,
-                               model_opt.dec_layers,
-                               model_opt.brnn,
-                               model_opt.enc_rnn_size,
-                               model_opt.dec_rnn_size,
-                               model_opt.audio_enc_pooling,
-                               model_opt.dropout,
-                               model_opt.sample_rate,
-                               model_opt.window_size)
+        encoder = AudioEncoder(
+            model_opt.rnn_type,
+            model_opt.enc_layers,
+            model_opt.dec_layers,
+            model_opt.brnn,
+            model_opt.enc_rnn_size,
+            model_opt.dec_rnn_size,
+            model_opt.audio_enc_pooling,
+            model_opt.dropout,
+            model_opt.sample_rate,
+            model_opt.window_size,
+        )
 
     # Build decoder.
     tgt_dict = fields["tgt"].vocab
-    feature_dicts = inputters.collect_feature_vocabs(fields, 'tgt')
-    tgt_embeddings = build_embeddings(model_opt, tgt_dict,
-                                      feature_dicts, for_encoder=False)
+    feature_dicts = inputters.collect_feature_vocabs(fields, "tgt")
+    tgt_embeddings = build_embeddings(
+        model_opt, tgt_dict, feature_dicts, for_encoder=False
+    )
 
     # Share the embedding matrix - preprocess with share_vocab required.
     if model_opt.share_embeddings:
         # src/tgt vocab should be the same if `-share_vocab` is specified.
         if src_dict != tgt_dict:
-            raise AssertionError('The `-share_vocab` should be set during '
-                                 'preprocess if you use share_embeddings!')
+            raise AssertionError(
+                "The `-share_vocab` should be set during "
+                "preprocess if you use share_embeddings!"
+            )
 
         tgt_embeddings.word_lut.weight = src_embeddings.word_lut.weight
 
@@ -276,18 +332,15 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
     if checkpoint is not None:
         # This preserves backward-compat for models using customed layernorm
         def fix_key(s):
-            s = re.sub(r'(.*)\.layer_norm((_\d+)?)\.b_2',
-                       r'\1.layer_norm\2.bias', s)
-            s = re.sub(r'(.*)\.layer_norm((_\d+)?)\.a_2',
-                       r'\1.layer_norm\2.weight', s)
+            s = re.sub(r"(.*)\.layer_norm((_\d+)?)\.b_2", r"\1.layer_norm\2.bias", s)
+            s = re.sub(r"(.*)\.layer_norm((_\d+)?)\.a_2", r"\1.layer_norm\2.weight", s)
             return s
 
-        checkpoint['model'] = \
-            {fix_key(k): v for (k, v) in checkpoint['model'].items()}
+        checkpoint["model"] = {fix_key(k): v for (k, v) in checkpoint["model"].items()}
         # end of patch for backward compatibility
 
-        model.load_state_dict(checkpoint['model'], strict=False)
-        generator.load_state_dict(checkpoint['generator'], strict=False)
+        model.load_state_dict(checkpoint["model"], strict=False)
+        generator.load_state_dict(checkpoint["generator"], strict=False)
     else:
         if model_opt.param_init != 0.0:
             for p in model.parameters():
@@ -302,12 +355,14 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
                 if p.dim() > 1:
                     xavier_uniform_(p)
 
-        if hasattr(model.encoder, 'embeddings'):
+        if hasattr(model.encoder, "embeddings"):
             model.encoder.embeddings.load_pretrained_vectors(
-                model_opt.pre_word_vecs_enc, model_opt.fix_word_vecs_enc)
-        if hasattr(model.decoder, 'embeddings'):
+                model_opt.pre_word_vecs_enc, model_opt.fix_word_vecs_enc
+            )
+        if hasattr(model.decoder, "embeddings"):
             model.decoder.embeddings.load_pretrained_vectors(
-                model_opt.pre_word_vecs_dec, model_opt.fix_word_vecs_dec)
+                model_opt.pre_word_vecs_dec, model_opt.fix_word_vecs_dec
+            )
 
     # Add generator to model (this registers it as parameter of model).
     model.generator = generator
@@ -318,7 +373,7 @@ def build_base_model(model_opt, fields, gpu, checkpoint=None):
 
 def build_model(model_opt, opt, fields, checkpoint):
     """ Build the Model """
-    logger.info('Building model...')
+    logger.info("Building model...")
     model = build_base_model(model_opt, fields, use_gpu(opt), checkpoint)
     logger.info(model)
     return model

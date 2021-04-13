@@ -7,7 +7,8 @@ from onmt.modules.sparse_activations import (
     sparsemax,
     sparsemax_topk,
     tsallis15,
-    tsallis15_topk)
+    tsallis15_topk,
+)
 
 from onmt.modules.root_finding import tsallis_bisect, sparsemax_bisect
 
@@ -74,16 +75,30 @@ class GlobalAttention(nn.Module):
 
     """
 
-    def __init__(self, dim, coverage=False, attn_type="dot",
-                 attn_func="softmax", attn_alpha=None, bisect_iter=0):
+    def __init__(
+        self,
+        dim,
+        coverage=False,
+        attn_type="dot",
+        attn_func="softmax",
+        attn_alpha=None,
+        bisect_iter=0,
+    ):
         super(GlobalAttention, self).__init__()
 
         self.dim = dim
-        assert attn_type in ["dot", "general", "mlp"], (
-            "Please select a valid attention type.")
+        assert attn_type in [
+            "dot",
+            "general",
+            "mlp",
+        ], "Please select a valid attention type."
         self.attn_type = attn_type
-        assert attn_func in ("softmax", "sparsemax", "tsallis15", "tsallis"), \
-            "Please select a valid attention function."
+        assert attn_func in (
+            "softmax",
+            "sparsemax",
+            "tsallis15",
+            "tsallis",
+        ), "Please select a valid attention function."
         self.attn_func = attn_func
 
         self.attn_alpha = attn_alpha
@@ -107,7 +122,7 @@ class GlobalAttention(nn.Module):
             self.linear_cover = nn.Linear(1, dim, bias=False)
 
     def extra_repr(self):
-        keys = ['attn_type', 'attn_func', 'attn_alpha', 'bisect_iter']
+        keys = ["attn_type", "attn_func", "attn_alpha", "bisect_iter"]
         values = [getattr(self, k) for k in keys]
         return ", ".join("{}: {}".format(k, v) for k, v in zip(keys, values))
 
@@ -217,7 +232,7 @@ class GlobalAttention(nn.Module):
         if memory_lengths is not None:
             mask = sequence_mask(memory_lengths, max_len=align.size(-1))
             mask = mask.unsqueeze(1)  # Make it broadcastable.
-            align.masked_fill_(1 - mask, -float('inf'))
+            align.masked_fill_(1 - mask, -float("inf"))
 
         # normalize attention weights
         align_vectors = self.attn_map(align.view(batch * target_l, source_l))
@@ -228,7 +243,7 @@ class GlobalAttention(nn.Module):
         c = torch.bmm(align_vectors, memory_bank)
 
         # concatenate
-        concat_c = torch.cat([c, source], 2).view(batch*target_l, dim*2)
+        concat_c = torch.cat([c, source], 2).view(batch * target_l, dim * 2)
         attn_h = self.linear_out(concat_c).view(batch, target_l, dim)
         if self.attn_type in ["general", "dot"]:
             attn_h = torch.tanh(attn_h)

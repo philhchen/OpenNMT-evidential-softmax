@@ -17,7 +17,8 @@ from onmt.modules.sparse_losses import (
     SparsemaxTopKLoss,
     Tsallis15TopKLoss,
     SparsemaxBisectLoss,
-    TsallisBisectLoss)
+    TsallisBisectLoss,
+)
 
 from onmt.modules.sparse_activations import LogSparsemax
 
@@ -36,35 +37,39 @@ def build_loss_compute(model, tgt_vocab, opt, train=True):
     device = torch.device("cuda" if onmt.utils.misc.use_gpu(opt) else "cpu")
 
     padding_idx = tgt_vocab.stoi[inputters.PAD_WORD]
-    assert opt.k == 0 or opt.bisect_iter == 0, \
-        "Bisection and topk are mutually exclusive !"
+    assert (
+        opt.k == 0 or opt.bisect_iter == 0
+    ), "Bisection and topk are mutually exclusive !"
     if opt.loss_alpha == 1:
-        criterion = nn.CrossEntropyLoss(
-            ignore_index=padding_idx, reduction='sum')
+        criterion = nn.CrossEntropyLoss(ignore_index=padding_idx, reduction="sum")
     elif opt.loss_alpha == 2.0:
         # sparsemax
         if opt.k > 0:
             criterion = SparsemaxTopKLoss(
-                k=opt.k, ignore_index=padding_idx, reduction='sum')
+                k=opt.k, ignore_index=padding_idx, reduction="sum"
+            )
         elif opt.bisect_iter > 0:
             criterion = SparsemaxBisectLoss(
-                n_iter=opt.bisect_iter, ignore_index=padding_idx,
-                reduction='sum')
+                n_iter=opt.bisect_iter, ignore_index=padding_idx, reduction="sum"
+            )
         else:
-            criterion = SparsemaxLoss(
-                ignore_index=padding_idx, reduction='sum')
+            criterion = SparsemaxLoss(ignore_index=padding_idx, reduction="sum")
     elif opt.loss_alpha == 1.5 and opt.bisect_iter == 0:
         # tsallis 1.5, non-bisection cases
         if opt.k > 0:
             criterion = Tsallis15TopKLoss(
-                k=opt.k, ignore_index=padding_idx, reduction='sum')
+                k=opt.k, ignore_index=padding_idx, reduction="sum"
+            )
         else:
-            criterion = Tsallis15Loss(ignore_index=padding_idx, reduction='sum')
+            criterion = Tsallis15Loss(ignore_index=padding_idx, reduction="sum")
     else:
         # generic tsallis with bisection
         criterion = TsallisBisectLoss(
-                alpha=opt.loss_alpha, n_iter=opt.bisect_iter,
-                ignore_index=padding_idx, reduction='sum')
+            alpha=opt.loss_alpha,
+            n_iter=opt.bisect_iter,
+            ignore_index=padding_idx,
+            reduction="sum",
+        )
 
     criterion_name = str(type(criterion))
     # now all loss functions operate on raw logits
@@ -151,9 +156,9 @@ class LossComputeBase(nn.Module):
 
         return batch_stats
 
-    def sharded_compute_loss(self, batch, output, attns,
-                             cur_trunc, trunc_size, shard_size,
-                             normalization):
+    def sharded_compute_loss(
+        self, batch, output, attns, cur_trunc, trunc_size, shard_size, normalization
+    ):
         """Compute the forward loss and backpropagate.  Computation is done
         with shards and optionally truncation for memory efficiency.
 
@@ -219,6 +224,7 @@ class LabelSmoothingLoss(nn.Module):
     KL-divergence between q_{smoothed ground truth prob.}(w)
     and p_{prob. computed by model}(w) is minimized.
     """
+
     def __init__(self, label_smoothing, tgt_vocab_size, ignore_index=-100):
         assert 0.0 < label_smoothing <= 1.0
         self.ignore_index = ignore_index
@@ -227,7 +233,7 @@ class LabelSmoothingLoss(nn.Module):
         smoothing_value = label_smoothing / (tgt_vocab_size - 2)
         one_hot = torch.full((tgt_vocab_size,), smoothing_value)
         one_hot[self.ignore_index] = 0
-        self.register_buffer('one_hot', one_hot.unsqueeze(0))
+        self.register_buffer("one_hot", one_hot.unsqueeze(0))
 
         self.confidence = 1.0 - label_smoothing
 
@@ -240,7 +246,7 @@ class LabelSmoothingLoss(nn.Module):
         model_prob.scatter_(1, target.unsqueeze(1), self.confidence)
         model_prob.masked_fill_((target == self.ignore_index).unsqueeze(1), 0)
 
-        return F.kl_div(output, model_prob, reduction='sum')
+        return F.kl_div(output, model_prob, reduction="sum")
 
 
 class NMTLossCompute(LossComputeBase):
@@ -254,7 +260,7 @@ class NMTLossCompute(LossComputeBase):
     def _make_shard_state(self, batch, output, range_, attns=None):
         return {
             "output": output,
-            "target": batch.tgt[range_[0] + 1: range_[1]],
+            "target": batch.tgt[range_[0] + 1 : range_[1]],
         }
 
     def _compute_loss(self, batch, output, target):
@@ -312,8 +318,12 @@ def shards(state, shard_size, eval_only=False):
         # want a sequence of dictionaries of tensors.
         # First, unzip the dictionary into a sequence of keys and a
         # sequence of tensor-like sequences.
-        keys, values = zip(*((k, [v_chunk for v_chunk in v_split])
-                             for k, (_, v_split) in non_none.items()))
+        keys, values = zip(
+            *(
+                (k, [v_chunk for v_chunk in v_split])
+                for k, (_, v_split) in non_none.items()
+            )
+        )
 
         # Now, yield a dictionary for each shard. The keys are always
         # the same. values is a sequence of length #keys where each
@@ -328,7 +338,11 @@ def shards(state, shard_size, eval_only=False):
         variables = []
         for k, (v, v_split) in non_none.items():
             if isinstance(v, torch.Tensor) and state[k].requires_grad:
-                variables.extend(zip(torch.split(state[k], shard_size),
-                                     [v_chunk.grad for v_chunk in v_split]))
+                variables.extend(
+                    zip(
+                        torch.split(state[k], shard_size),
+                        [v_chunk.grad for v_chunk in v_split],
+                    )
+                )
         inputs, grads = zip(*variables)
         torch.autograd.backward(inputs, grads)

@@ -16,13 +16,12 @@ def _tsallis_gp_inv(y, alpha):
     return y ** (1 / (alpha - 1))
 
 
-def _tsallis_p(X,  alpha):
+def _tsallis_p(X, alpha):
     return _tsallis_gp_inv(torch.clamp(X, min=0), alpha)
 
 
 # TODO: support other dims other than 1. The code likely same, but needs tested
 class SparsemaxBisectFunction(Function):
-
     @staticmethod
     def forward(ctx, X, n_iter=50, ensure_sum_one=True):
 
@@ -58,7 +57,7 @@ class SparsemaxBisectFunction(Function):
 
     @staticmethod
     def backward(ctx, dY):
-        Y, = ctx.saved_tensors
+        (Y,) = ctx.saved_tensors
         gppr = (Y > 0).to(dtype=dY.dtype)
         dX = dY * gppr
         q = dX.sum(ctx.dim) / gppr.sum(ctx.dim)
@@ -68,7 +67,6 @@ class SparsemaxBisectFunction(Function):
 
 
 class TsallisBisectFunction(Function):
-
     @staticmethod
     def forward(ctx, X, alpha=1.5, n_iter=50, ensure_sum_one=True):
 
@@ -109,7 +107,7 @@ class TsallisBisectFunction(Function):
 
     @staticmethod
     def backward(ctx, dY):
-        Y, = ctx.saved_tensors
+        (Y,) = ctx.saved_tensors
 
         gppr = torch.where(Y > 0, Y ** (2 - ctx.alpha), Y.new_zeros(1))
 

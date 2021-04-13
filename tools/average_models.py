@@ -11,11 +11,11 @@ def average_models(model_files):
 
     for i, model_file in enumerate(model_files):
         m = torch.load(model_file)
-        model_weights = m['model']
-        generator_weights = m['generator']
+        model_weights = m["model"]
+        generator_weights = m["generator"]
 
         if i == 0:
-            vocab, opt = m['vocab'], m['opt']
+            vocab, opt = m["vocab"], m["opt"]
             avg_model = model_weights
             avg_generator = generator_weights
         else:
@@ -25,17 +25,22 @@ def average_models(model_files):
             for (k, v) in avg_generator.items():
                 avg_generator[k].mul_(i).add_(generator_weights[k]).div_(i + 1)
 
-    final = {"vocab": vocab, "opt": opt, "optim": None,
-             "generator": avg_generator, "model": avg_model}
+    final = {
+        "vocab": vocab,
+        "opt": opt,
+        "optim": None,
+        "generator": avg_generator,
+        "model": avg_model,
+    }
     return final
 
 
 def main():
     parser = argparse.ArgumentParser(description="")
-    parser.add_argument("-models", "-m", nargs="+", required=True,
-                        help="List of models")
-    parser.add_argument("-output", "-o", required=True,
-                        help="Output file")
+    parser.add_argument(
+        "-models", "-m", nargs="+", required=True, help="List of models"
+    )
+    parser.add_argument("-output", "-o", required=True, help="Output file")
     opt = parser.parse_args()
 
     final = average_models(opt.models)

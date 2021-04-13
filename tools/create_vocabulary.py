@@ -37,9 +37,12 @@ def read_files_batch(file_list):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-file_type', default='text',
-                        choices=['text', 'field'], required=True,
-                        help="""Options for vocabulary creation.
+    parser.add_argument(
+        "-file_type",
+        default="text",
+        choices=["text", "field"],
+        required=True,
+        help="""Options for vocabulary creation.
                                The default is 'text' where the user passes
                                a corpus or a list of corpora files for which
                                they want to create a vocabulary from.
@@ -48,7 +51,8 @@ def main():
                                the preprocessing stage of an already
                                preprocessed corpus. The vocabulary file created
                                will just be the vocabulary inside the field
-                               corresponding to the argument 'side'.""")
+                               corresponding to the argument 'side'.""",
+    )
     parser.add_argument("-file", type=str, nargs="+", required=True)
     parser.add_argument("-out_file", type=str, required=True)
     parser.add_argument("-side", type=str)
@@ -56,7 +60,7 @@ def main():
     opt = parser.parse_args()
 
     vocabulary = {}
-    if opt.file_type == 'text':
+    if opt.file_type == "text":
         print("Reading input file...")
         for batch in read_files_batch(opt.file):
             for sentence in batch:
@@ -68,11 +72,13 @@ def main():
 
         print("Writing vocabulary file...")
         with open(opt.out_file, "w") as f:
-            for w, count in sorted(vocabulary.items(), key=lambda x: x[1],
-                                   reverse=True):
+            for w, count in sorted(
+                vocabulary.items(), key=lambda x: x[1], reverse=True
+            ):
                 f.write("{0}\n".format(w))
     else:
         import torch
+
         print("Reading input file...")
         vocabs = torch.load(opt.file[0])
         word_list = dict(vocabs)[opt.side].itos

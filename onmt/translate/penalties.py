@@ -35,7 +35,7 @@ class PenaltyBuilder(object):
     Below are all the different penalty terms implemented so far
     """
 
-    def coverage_wu(self, beam, cov, beta=0.):
+    def coverage_wu(self, beam, cov, beta=0.0):
         """
         NMT coverage re-ranking score from
         "Google's Neural Machine Translation System" :cite:`wu2016google`.
@@ -43,7 +43,7 @@ class PenaltyBuilder(object):
         penalty = -torch.min(cov, cov.clone().fill_(1.0)).log().sum(1)
         return beta * penalty
 
-    def coverage_summary(self, beam, cov, beta=0.):
+    def coverage_summary(self, beam, cov, beta=0.0):
         """
         Our summary penalty.
         """
@@ -51,29 +51,28 @@ class PenaltyBuilder(object):
         penalty -= cov.size(1)
         return beta * penalty
 
-    def coverage_none(self, beam, cov, beta=0.):
+    def coverage_none(self, beam, cov, beta=0.0):
         """
         returns zero as penalty
         """
         return 0.0
 
-    def length_wu(self, beam, logprobs, alpha=0.):
+    def length_wu(self, beam, logprobs, alpha=0.0):
         """
         NMT length re-ranking score from
         "Google's Neural Machine Translation System" :cite:`wu2016google`.
         """
 
-        modifier = (((5 + len(beam.next_ys)) ** alpha) /
-                    ((5 + 1) ** alpha))
-        return (logprobs / modifier)
+        modifier = ((5 + len(beam.next_ys)) ** alpha) / ((5 + 1) ** alpha)
+        return logprobs / modifier
 
-    def length_average(self, beam, logprobs, alpha=0.):
+    def length_average(self, beam, logprobs, alpha=0.0):
         """
         Returns the average probability of tokens in a sequence.
         """
         return logprobs / len(beam.next_ys)
 
-    def length_none(self, beam, logprobs, alpha=0., beta=0.):
+    def length_none(self, beam, logprobs, alpha=0.0, beta=0.0):
         """
         Returns unmodified scores.
         """

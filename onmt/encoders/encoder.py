@@ -33,7 +33,7 @@ class EncoderBase(nn.Module):
     def _check_args(self, src, lengths=None, hidden=None):
         _, n_batch, _ = src.size()
         if lengths is not None:
-            n_batch_, = lengths.size()
+            (n_batch_,) = lengths.size()
             aeq(n_batch, n_batch_)
 
     def forward(self, src, lengths=None):

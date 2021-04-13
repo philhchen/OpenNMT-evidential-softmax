@@ -88,7 +88,7 @@ class CopyGenerator(nn.Module):
 
         # Original probabilities.
         logits = self.linear(hidden)
-        logits[:, self.tgt_dict.stoi[inputters.PAD_WORD]] = -float('inf')
+        logits[:, self.tgt_dict.stoi[inputters.PAD_WORD]] = -float("inf")
         prob = torch.softmax(logits, 1)
 
         # Probability of copying p(z=1) batch.
@@ -97,8 +97,7 @@ class CopyGenerator(nn.Module):
         out_prob = torch.mul(prob, 1 - p_copy)
         mul_attn = torch.mul(attn, p_copy)
         copy_prob = torch.bmm(
-            mul_attn.view(-1, batch, slen).transpose(0, 1),
-            src_map.transpose(0, 1)
+            mul_attn.view(-1, batch, slen).transpose(0, 1), src_map.transpose(0, 1)
         ).transpose(0, 1)
         copy_prob = copy_prob.contiguous().view(-1, cvocab)
         return torch.cat([out_prob, copy_prob], 1)
@@ -107,8 +106,9 @@ class CopyGenerator(nn.Module):
 class CopyGeneratorLoss(nn.Module):
     """ Copy generator criterion """
 
-    def __init__(self, vocab_size, force_copy, unk_index=0,
-                 ignore_index=-100, eps=1e-20):
+    def __init__(
+        self, vocab_size, force_copy, unk_index=0, ignore_index=-100, eps=1e-20
+    ):
         super(CopyGeneratorLoss, self).__init__()
         self.force_copy = force_copy
         self.eps = eps
@@ -137,9 +137,7 @@ class CopyGeneratorLoss(nn.Module):
         if not self.force_copy:
             non_copy = non_copy | (target != self.unk_index)
 
-        probs = torch.where(
-            non_copy, copy_tok_probs + vocab_probs, copy_tok_probs
-        )
+        probs = torch.where(non_copy, copy_tok_probs + vocab_probs, copy_tok_probs)
 
         loss = -probs.log()  # just NLLLoss; can the module be incorporated?
         # Drop padding.
@@ -160,14 +158,16 @@ class CopyGeneratorLossCompute(LossComputeBase):
     def _make_shard_state(self, batch, output, range_, attns):
         """ See base class for args description. """
         if getattr(batch, "alignment", None) is None:
-            raise AssertionError("using -copy_attn you need to pass in "
-                                 "-dynamic_dict during preprocess stage.")
+            raise AssertionError(
+                "using -copy_attn you need to pass in "
+                "-dynamic_dict during preprocess stage."
+            )
 
         return {
             "output": output,
-            "target": batch.tgt[range_[0] + 1: range_[1]],
+            "target": batch.tgt[range_[0] + 1 : range_[1]],
             "copy_attn": attns.get("copy"),
-            "align": batch.alignment[range_[0] + 1: range_[1]]
+            "align": batch.alignment[range_[0] + 1 : range_[1]],
         }
 
     def _compute_loss(self, batch, output, target, copy_attn, align):
@@ -182,16 +182,19 @@ class CopyGeneratorLossCompute(LossComputeBase):
         """
         target = target.view(-1)
         align = align.view(-1)
-        scores = self.generator(self._bottle(output),
-                                self._bottle(copy_attn),
-                                batch.src_map)
+        scores = self.generator(
+            self._bottle(output), self._bottle(copy_attn), batch.src_map
+        )
         loss = self.criterion(scores, align, target)
 
         # this block does not depend on the loss value computed above
         # and is used only for stats
         scores_data = inputters.TextDataset.collapse_copy_scores(
             self._unbottle(scores.clone(), batch.batch_size),
-            batch, self.tgt_vocab, batch.dataset.src_vocabs)
+            batch,
+            self.tgt_vocab,
+            batch.dataset.src_vocabs,
+        )
         scores_data = self._bottle(scores_data)
 
         # this block does not depend on the loss value computed above

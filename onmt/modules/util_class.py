@@ -16,7 +16,7 @@ class Elementwise(nn.ModuleList):
     """
 
     def __init__(self, merge=None, *args):
-        assert merge in [None, 'first', 'concat', 'sum', 'mlp']
+        assert merge in [None, "first", "concat", "sum", "mlp"]
         self.merge = merge
         super(Elementwise, self).__init__(*args)
 
@@ -24,11 +24,11 @@ class Elementwise(nn.ModuleList):
         inputs_ = [feat.squeeze(2) for feat in inputs.split(1, dim=2)]
         assert len(self) == len(inputs_)
         outputs = [f(x) for f, x in zip(self, inputs_)]
-        if self.merge == 'first':
+        if self.merge == "first":
             return outputs[0]
-        elif self.merge == 'concat' or self.merge == 'mlp':
+        elif self.merge == "concat" or self.merge == "mlp":
             return torch.cat(outputs, 2)
-        elif self.merge == 'sum':
+        elif self.merge == "sum":
             return sum(outputs)
         else:
             return outputs
