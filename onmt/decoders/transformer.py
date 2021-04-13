@@ -24,20 +24,43 @@ class TransformerDecoderLayer(nn.Module):
       self_attn_type (string): type of self-attention scaled-dot, average
     """
 
-    def __init__(self, d_model, heads, d_ff, dropout, self_attn_type="scaled-dot"):
+    def __init__(
+        self,
+        d_model,
+        heads,
+        d_ff,
+        dropout,
+        self_attn_type="scaled-dot",
+        self_attn_func="softmax",
+        self_attn_alpha=None,
+        self_attn_bisect_iter=0,
+        context_attn_func="softmax",
+        context_attn_alpha=None,
+        context_attn_bisect_iter=0,
+    ):
         super(TransformerDecoderLayer, self).__init__()
 
         self.self_attn_type = self_attn_type
 
         if self_attn_type == "scaled-dot":
             self.self_attn = onmt.modules.MultiHeadedAttention(
-                heads, d_model, dropout=dropout
+                heads,
+                d_model,
+                dropout=dropout,
+                attn_func=self_attn_func,
+                attn_alpha=self_attn_alpha,
+                attn_bisect_iter=self_attn_bisect_iter,
             )
         elif self_attn_type == "average":
             self.self_attn = onmt.modules.AverageAttention(d_model, dropout=dropout)
 
         self.context_attn = onmt.modules.MultiHeadedAttention(
-            heads, d_model, dropout=dropout
+            heads,
+            d_model,
+            dropout=dropout,
+            attn_func=context_attn_func,
+            attn_alpha=context_attn_alpha,
+            attn_bisect_iter=context_attn_bisect_iter,
         )
         self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout)
         self.layer_norm_1 = nn.LayerNorm(d_model, eps=1e-6)
@@ -169,9 +192,15 @@ class TransformerDecoder(nn.Module):
         attn_type,
         attn_func,
         copy_attn,
-        self_attn_type,
         dropout,
         embeddings,
+        self_attn_type,
+        self_attn_func,
+        self_attn_alpha,
+        self_attn_bisect_iter,
+        context_attn_func,
+        context_attn_alpha,
+        context_attn_bisect_iter,
     ):
         super(TransformerDecoder, self).__init__()
 
@@ -180,6 +209,12 @@ class TransformerDecoder(nn.Module):
         self.num_layers = num_layers
         self.embeddings = embeddings
         self.self_attn_type = self_attn_type
+        self.self_attn_func = self_attn_func
+        self.self_attn_alpha = self_attn_alpha
+        self.self_attn_bisect_iter = self_attn_bisect_iter
+        self.context_attn_func = context_attn_func
+        self.context_attn_alpha = context_attn_alpha
+        self.context_attn_bisect_iter = context_attn_bisect_iter
 
         # Decoder State
         self.state = {}
@@ -188,7 +223,17 @@ class TransformerDecoder(nn.Module):
         self.transformer_layers = nn.ModuleList(
             [
                 TransformerDecoderLayer(
-                    d_model, heads, d_ff, dropout, self_attn_type=self_attn_type
+                    d_model,
+                    heads,
+                    d_ff,
+                    dropout,
+                    self_attn_type=self_attn_type,
+                    self_attn_func=self_attn_func,
+                    self_attn_alpha=self_attn_alpha,
+                    self_attn_bisect_iter=self_attn_bisect_iter,
+                    context_attn_func=context_attn_func,
+                    context_attn_alpha=context_attn_alpha,
+                    context_attn_bisect_iter=context_attn_bisect_iter,
                 )
                 for _ in range(num_layers)
             ]

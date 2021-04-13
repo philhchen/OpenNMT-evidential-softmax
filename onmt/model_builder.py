@@ -77,6 +77,9 @@ def build_encoder(opt, embeddings):
             opt.transformer_ff,
             opt.dropout,
             embeddings,
+            opt.self_attention_function,
+            opt.self_attention_alpha,
+            opt.self_attention_bisect_iter,
         )
     elif opt.encoder_type == "cnn":
         return CNNEncoder(
@@ -117,9 +120,15 @@ def build_decoder(opt, embeddings):
             opt.global_attention,
             opt.global_attention_function,
             opt.copy_attn,
-            opt.self_attn_type,
             opt.dropout,
             embeddings,
+            opt.self_attention_type,
+            opt.self_attention_function,
+            opt.self_attention_alpha,
+            opt.self_attention_bisect_iter,
+            opt.context_attention_function,
+            opt.context_attention_alpha,
+            opt.context_attention_bisect_iter,
         )
     elif opt.decoder_type == "cnn":
         return CNNDecoder(

@@ -323,6 +323,21 @@ class LogTsallis15TopK(torch.nn.Module):
         return torch.log(tsallis15_topk(X, self.dim, self.k))
 
 
+class TsallisBisect(nn.Module):
+    def __init__(self, alpha=1.5, n_iter=50):
+        self.alpha = alpha
+        self.n_iter = n_iter
+        super(TsallisBisect, self).__init__()
+
+    def forward(self, X):
+        assert X.dim() == 2
+
+        p_star = tsallis_bisect(X, self.alpha, self.n_iter)
+        p_star /= p_star.sum(dim=1).unsqueeze(dim=1)
+
+        return p_star
+
+
 class LogTsallisBisect(nn.Module):
     def __init__(self, alpha=1.5, n_iter=50):
         self.alpha = alpha
@@ -356,39 +371,39 @@ INF = 1e6
 
 
 def log_sparsesoftmax(
-    input: torch.Tensor, dim: int, train: bool = True
+    input: torch.Tensor, dim: int, training: bool = True
 ) -> torch.Tensor:
     mask = input < torch.mean(input, dim=dim, keepdim=True)
-    mask_offset = mask * (INF if self.train else float("Inf"))
+    mask_offset = mask * (INF if training else float("Inf"))
     log_probs = F.log_softmax(input - mask_offset, dim=dim)
     return log_probs
 
 
-def sparsesoftmax(input: torch.Tensor, dim: int, train: bool = True) -> torch.Tensor:
+def sparsesoftmax(input: torch.Tensor, dim: int, training: bool = True) -> torch.Tensor:
     mask = input < torch.mean(input, dim=dim, keepdim=True)
-    mask_offset = mask * (INF if train else float("Inf"))
+    mask_offset = mask * (INF if training else float("Inf"))
     probs = F.softmax(input - mask_offset, dim=dim)
     return probs
 
 
 class LogSparseSoftmax(torch.nn.Module):
-    def __init__(self, dim: int = -1, train: bool = True):
+    def __init__(self, dim: int = -1, training: bool = True):
         super(LogSparseSoftmax, self).__init__()
         self.dim = dim
-        self.train = train
+        self.training = training
 
     def forward(self, X: torch.Tensor) -> torch.Tensor:
-        return log_sparsesoftmax(X, self.dim, self.train)
+        return log_sparsesoftmax(X, self.dim, self.training)
 
 
 class SparseSoftmax(torch.nn.Module):
-    def __init__(self, dim: int = -1, train: bool = True):
+    def __init__(self, dim: int = -1, training: bool = True):
         super(SparseSoftmax, self).__init__()
         self.dim = dim
-        self.train = train
+        self.training = training
 
     def forward(self, X: torch.Tensor) -> torch.Tensor:
-        return sparsesoftmax(X, self.dim, self.train)
+        return sparsesoftmax(X, self.dim, self.training)
 
 
 class SparseSoftmaxLoss(torch.nn.Module):
