@@ -3,6 +3,7 @@ This includes: LossComputeBase and the standard NMTLossCompute, and
                sharded loss compute stuff.
 """
 from __future__ import division
+from onmt.utils.statistics import Statistics
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -189,8 +190,10 @@ class LossComputeBase(nn.Module):
         batch_stats = onmt.utils.Statistics()
         range_ = (cur_trunc, cur_trunc + trunc_size)
         shard_state = self._make_shard_state(batch, output, range_, attns)
-        for shard in shards(shard_state, shard_size):
-            loss, stats = self._compute_loss(batch, **shard)
+        for i, shard in enumerate(shards(shard_state, shard_size)):
+            loss, stats = self._compute_loss(
+                batch, should_compute_stats=(i == 0), **shard
+            )
             loss.div(float(normalization)).backward()
             batch_stats.update(stats)
         return batch_stats
@@ -263,14 +266,18 @@ class NMTLossCompute(LossComputeBase):
             "target": batch.tgt[range_[0] + 1 : range_[1]],
         }
 
-    def _compute_loss(self, batch, output, target):
+    def _compute_loss(self, batch, output, target, should_compute_stats=True):
         bottled_output = self._bottle(output)
 
         scores = self.generator(bottled_output)
         gtruth = target.view(-1)
 
         loss = self.criterion(scores, gtruth)
-        stats = self._stats(loss.clone(), scores, gtruth)
+        stats = (
+            self._stats(loss.clone(), scores, gtruth)
+            if should_compute_stats
+            else Statistics()
+        )
 
         return loss, stats
 
