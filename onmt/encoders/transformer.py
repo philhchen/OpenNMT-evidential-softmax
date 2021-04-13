@@ -24,11 +24,25 @@ class TransformerEncoderLayer(nn.Module):
         dropout (float): dropout probability(0-1.0).
     """
 
-    def __init__(self, d_model, heads, d_ff, dropout):
+    def __init__(
+        self,
+        d_model,
+        heads,
+        d_ff,
+        dropout,
+        self_attn_func,
+        self_attn_alpha,
+        self_attn_bisect_iter,
+    ):
         super(TransformerEncoderLayer, self).__init__()
 
         self.self_attn = onmt.modules.MultiHeadedAttention(
-            heads, d_model, dropout=dropout
+            heads,
+            d_model,
+            dropout=dropout,
+            attn_func=self_attn_func,
+            attn_alpha=self_attn_alpha,
+            attn_bisect_iter=self_attn_bisect_iter,
         )
         self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout)
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
@@ -85,14 +99,33 @@ class TransformerEncoder(EncoderBase):
         * memory_bank `[src_len x batch_size x model_dim]`
     """
 
-    def __init__(self, num_layers, d_model, heads, d_ff, dropout, embeddings):
+    def __init__(
+        self,
+        num_layers,
+        d_model,
+        heads,
+        d_ff,
+        dropout,
+        embeddings,
+        self_attn_func,
+        self_attn_alpha,
+        self_attn_bisect_iter,
+    ):
         super(TransformerEncoder, self).__init__()
 
         self.num_layers = num_layers
         self.embeddings = embeddings
         self.transformer = nn.ModuleList(
             [
-                TransformerEncoderLayer(d_model, heads, d_ff, dropout)
+                TransformerEncoderLayer(
+                    d_model,
+                    heads,
+                    d_ff,
+                    dropout,
+                    self_attn_func,
+                    self_attn_alpha,
+                    self_attn_bisect_iter,
+                )
                 for _ in range(num_layers)
             ]
         )

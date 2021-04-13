@@ -285,12 +285,70 @@ def model_opts(parser):
         help="bisection iterations for tsallis attention (ignored o.w.)",
     )
     group.add(
-        "--self_attn_type",
-        "-self_attn_type",
+        "--context_attention_function",
+        "-context_attention_function",
+        type=str,
+        default="softmax",
+        choices=["softmax", "sparsemax", "tsallis15", "tsallis", "sparsesoftmax"],
+        help=(
+            "Attention probability mapping to use. If `tsallis`, you "
+            "must set --context_attention_alpha and "
+            "--context_attention_bisect_iter. `tsallis` with alpha=1.5 "
+            "is the same as tsallis15, and with alpha=2 the same as "
+            "sparsemax, but accessed through a generic bisection-based "
+            "implementation which may be faster for long sentences."
+        ),
+    )
+    group.add(
+        "--context_attention_alpha",
+        "-context_attention_alpha",
+        default=None,
+        type=float,
+        help="alpha value for tsallis attention (ignored otherwise)",
+    )
+    group.add(
+        "--context_attention_bisect_iter",
+        "-context_attention_bisect_iter",
+        default=0,
+        type=int,
+        help="bisection iterations for tsallis attention (ignored o.w.)",
+    )
+    group.add(
+        "--self_attention_type",
+        "-self_attention_type",
         type=str,
         default="scaled-dot",
         help="""Self attention type in Transformer decoder
                        layer -- currently "scaled-dot" or "average" """,
+    )
+    group.add(
+        "--self_attention_function",
+        "-self_attention_function",
+        type=str,
+        default="softmax",
+        choices=["softmax", "sparsemax", "tsallis15", "tsallis", "sparsesoftmax"],
+        help=(
+            "Attention probability mapping to use. If `tsallis`, you "
+            "must set --self_attention_alpha and "
+            "--self_attention_bisect_iter. `tsallis` with alpha=1.5 "
+            "is the same as tsallis15, and with alpha=2 the same as "
+            "sparsemax, but accessed through a generic bisection-based "
+            "implementation which may be faster for long sentences."
+        ),
+    )
+    group.add(
+        "--self_attention_alpha",
+        "-self_attention_alpha",
+        default=None,
+        type=float,
+        help="alpha value for tsallis attention (ignored otherwise)",
+    )
+    group.add(
+        "--self_attention_bisect_iter",
+        "-self_attention_bisect_iter",
+        default=0,
+        type=int,
+        help="bisection iterations for tsallis attention (ignored o.w.)",
     )
     group.add(
         "--heads",

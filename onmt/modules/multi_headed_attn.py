@@ -3,6 +3,13 @@ import math
 import torch
 import torch.nn as nn
 
+from onmt.modules.sparse_activations import (
+    SparseSoftmax,
+    Sparsemax,
+    Tsallis15,
+    TsallisBisect,
+)
+
 # from onmt.utils.misc import aeq
 
 
@@ -48,7 +55,15 @@ class MultiHeadedAttention(nn.Module):
        dropout (float): dropout parameter
     """
 
-    def __init__(self, head_count, model_dim, dropout=0.1):
+    def __init__(
+        self,
+        head_count,
+        model_dim,
+        dropout=0.1,
+        attn_func="softmax",
+        attn_alpha=None,
+        attn_bisect_iter=0,
+    ):
         assert model_dim % head_count == 0
         self.dim_per_head = model_dim // head_count
         self.model_dim = model_dim
@@ -59,7 +74,22 @@ class MultiHeadedAttention(nn.Module):
         self.linear_keys = nn.Linear(model_dim, head_count * self.dim_per_head)
         self.linear_values = nn.Linear(model_dim, head_count * self.dim_per_head)
         self.linear_query = nn.Linear(model_dim, head_count * self.dim_per_head)
-        self.softmax = nn.Softmax(dim=-1)
+
+        if attn_func == "softmax":
+            self.normalization = nn.Softmax(dim=-1)
+        elif attn_func == "sparsesoftmax":
+            self.normalization = SparseSoftmax(dim=-1)
+        elif attn_func == "sparsemax":
+            self.normalization = Sparsemax(dim=-1)
+        elif attn_func == "tsallis15":
+            self.normalization = Tsallis15(dim=-1)
+        elif attn_func == "tsallis":
+            self.normalization = TsallisBisect(
+                alpha=attn_alpha, n_iter=attn_bisect_iter
+            )
+        else:
+            raise ValueError(f"Unsupported attention function: {attn_func}")
+
         self.dropout = nn.Dropout(dropout)
         self.final_linear = nn.Linear(model_dim, model_dim)
 
@@ -181,7 +211,7 @@ class MultiHeadedAttention(nn.Module):
             scores = scores.masked_fill(mask, -1e18)
 
         # 3) Apply attention dropout and compute context vectors.
-        attn = self.softmax(scores)
+        attn = self.normalization(scores)
         drop_attn = self.dropout(attn)
         context = unshape(torch.matmul(drop_attn, value))
 
