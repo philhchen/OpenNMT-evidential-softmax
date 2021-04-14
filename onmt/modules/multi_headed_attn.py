@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 
 from onmt.modules.sparse_activations import (
-    SparseSoftmax,
+    ESoftmax,
     Sparsemax,
     Tsallis15,
     TsallisBisect,
@@ -77,8 +77,8 @@ class MultiHeadedAttention(nn.Module):
 
         if attn_func == "softmax":
             self.normalization = nn.Softmax(dim=-1)
-        elif attn_func == "sparsesoftmax":
-            self.normalization = SparseSoftmax(dim=-1)
+        elif attn_func == "esoftmax":
+            self.normalization = ESoftmax(dim=-1)
         elif attn_func == "sparsemax":
             self.normalization = Sparsemax(dim=-1)
         elif attn_func == "tsallis15":

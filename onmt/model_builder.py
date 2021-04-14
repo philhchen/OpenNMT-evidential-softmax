@@ -192,8 +192,8 @@ def load_test_model(opt, dummy_opt, model_path=None):
     model = build_base_model(model_opt, fields, use_gpu(opt), checkpoint)
 
     # now build the generator
-    if model_opt.generator_function == "sparsesoftmax":
-        gen_func = onmt.modules.sparse_activations.LogSparsesoftmax(dim=-1)
+    if model_opt.generator_function == "esoftmax":
+        gen_func = onmt.modules.sparse_activations.LogESoftmax(dim=-1)
     else:
         alpha_lookup = {"softmax": 1.0, "tsallis15": 1.5, "sparsemax": 2.0}
         gen_alpha = alpha_lookup.get(model_opt.generator_function, model_opt.loss_alpha)

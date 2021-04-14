@@ -7,6 +7,7 @@ from onmt.modules.sparse_activations import (
     sparsemax_topk,
     tsallis15,
     tsallis15_topk,
+    LogESoftmax,
 )
 from onmt.modules.root_finding import tsallis_bisect, sparsemax_bisect
 
@@ -278,3 +279,22 @@ class Tsallis15TopKLoss(_GenericLoss):
 
     def loss(self, input, target):
         return tsallis15_topk_loss(input, target, self.k)
+
+
+class ESoftmaxLoss(torch.nn.Module):
+    def __init__(
+        self, reduction: str = "none", dim: int = -1, ignore_index: int = -100
+    ):
+        super(ESoftmaxLoss, self).__init__()
+        self.log_esoftmax = LogESoftmax(dim)
+        self.reduction = reduction
+        self.dim = dim
+        self.ignore_index = ignore_index
+
+    def forward(self, input: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        return torch.nn.functional.nll_loss(
+            self.log_esoftmax(input),
+            target,
+            reduction=self.reduction,
+            ignore_index=self.ignore_index,
+        )

@@ -13,6 +13,7 @@ import onmt.inputters as inputters
 from onmt.utils.logging import logger
 
 from onmt.modules.sparse_losses import (
+    ESoftmaxLoss,
     SparsemaxLoss,
     Tsallis15Loss,
     SparsemaxTopKLoss,
@@ -20,8 +21,6 @@ from onmt.modules.sparse_losses import (
     SparsemaxBisectLoss,
     TsallisBisectLoss,
 )
-
-from onmt.modules.sparse_activations import LogSparsemax
 
 
 def build_loss_compute(model, tgt_vocab, opt, train=True):
@@ -41,36 +40,39 @@ def build_loss_compute(model, tgt_vocab, opt, train=True):
     assert (
         opt.k == 0 or opt.bisect_iter == 0
     ), "Bisection and topk are mutually exclusive !"
-    if opt.loss_alpha == 1:
-        criterion = nn.CrossEntropyLoss(ignore_index=padding_idx, reduction="sum")
-    elif opt.loss_alpha == 2.0:
-        # sparsemax
-        if opt.k > 0:
-            criterion = SparsemaxTopKLoss(
-                k=opt.k, ignore_index=padding_idx, reduction="sum"
-            )
-        elif opt.bisect_iter > 0:
-            criterion = SparsemaxBisectLoss(
-                n_iter=opt.bisect_iter, ignore_index=padding_idx, reduction="sum"
-            )
-        else:
-            criterion = SparsemaxLoss(ignore_index=padding_idx, reduction="sum")
-    elif opt.loss_alpha == 1.5 and opt.bisect_iter == 0:
-        # tsallis 1.5, non-bisection cases
-        if opt.k > 0:
-            criterion = Tsallis15TopKLoss(
-                k=opt.k, ignore_index=padding_idx, reduction="sum"
-            )
-        else:
-            criterion = Tsallis15Loss(ignore_index=padding_idx, reduction="sum")
+    if opt.loss_fn == "esoftmax":
+        criterion = ESoftmaxLoss(ignore_index=padding_idx, reduction="sum")
     else:
-        # generic tsallis with bisection
-        criterion = TsallisBisectLoss(
-            alpha=opt.loss_alpha,
-            n_iter=opt.bisect_iter,
-            ignore_index=padding_idx,
-            reduction="sum",
-        )
+        if opt.loss_alpha == 1:
+            criterion = nn.CrossEntropyLoss(ignore_index=padding_idx, reduction="sum")
+        elif opt.loss_alpha == 2.0:
+            # sparsemax
+            if opt.k > 0:
+                criterion = SparsemaxTopKLoss(
+                    k=opt.k, ignore_index=padding_idx, reduction="sum"
+                )
+            elif opt.bisect_iter > 0:
+                criterion = SparsemaxBisectLoss(
+                    n_iter=opt.bisect_iter, ignore_index=padding_idx, reduction="sum"
+                )
+            else:
+                criterion = SparsemaxLoss(ignore_index=padding_idx, reduction="sum")
+        elif opt.loss_alpha == 1.5 and opt.bisect_iter == 0:
+            # tsallis 1.5, non-bisection cases
+            if opt.k > 0:
+                criterion = Tsallis15TopKLoss(
+                    k=opt.k, ignore_index=padding_idx, reduction="sum"
+                )
+            else:
+                criterion = Tsallis15Loss(ignore_index=padding_idx, reduction="sum")
+        else:
+            # generic tsallis with bisection
+            criterion = TsallisBisectLoss(
+                alpha=opt.loss_alpha,
+                n_iter=opt.bisect_iter,
+                ignore_index=padding_idx,
+                reduction="sum",
+            )
 
     criterion_name = str(type(criterion))
     # now all loss functions operate on raw logits

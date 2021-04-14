@@ -92,8 +92,8 @@ def build_dataset_iter(datasets, fields, batch_size, use_gpu):
 
 def load_model(checkpoint, fields, k=0, bisect_iter=0, gpu=False):
     model_opt = checkpoint["opt"]
-    if model_opt.generator_function == "sparsesoftmax":
-        gen_func = onmt.modules.sparse_activations.Sparsesoftmax(dim=-1)
+    if model_opt.generator_function == "esoftmax":
+        gen_func = onmt.modules.sparse_activations.ESoftmax(dim=-1)
     else:
         alpha_lookup = {"softmax": 1.0, "tsallis15": 1.5, "sparsemax": 2.0}
         if not hasattr(model_opt, "loss_alpha"):

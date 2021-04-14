@@ -260,7 +260,7 @@ def model_opts(parser):
         "-global_attention_function",
         type=str,
         default="softmax",
-        choices=["softmax", "sparsemax", "tsallis15", "tsallis", "sparsesoftmax"],
+        choices=["softmax", "sparsemax", "tsallis15", "tsallis", "esoftmax"],
         help=(
             "Attention probability mapping to use. If `tsallis`, you "
             "must set --global_attention_alpha and "
@@ -289,7 +289,7 @@ def model_opts(parser):
         "-context_attention_function",
         type=str,
         default="softmax",
-        choices=["softmax", "sparsemax", "tsallis15", "tsallis", "sparsesoftmax"],
+        choices=["softmax", "sparsemax", "tsallis15", "tsallis", "esoftmax"],
         help=(
             "Attention probability mapping to use. If `tsallis`, you "
             "must set --context_attention_alpha and "
@@ -326,7 +326,7 @@ def model_opts(parser):
         "-self_attention_function",
         type=str,
         default="softmax",
-        choices=["softmax", "sparsemax", "tsallis15", "tsallis", "sparsesoftmax"],
+        choices=["softmax", "sparsemax", "tsallis15", "tsallis", "esoftmax"],
         help=(
             "Attention probability mapping to use. If `tsallis`, you "
             "must set --self_attention_alpha and "
@@ -376,12 +376,19 @@ def model_opts(parser):
         "--generator_function",
         "-generator_function",
         default=None,
-        choices=["softmax", "sparsemax", "tsallis15", "sparsesoftmax"],
+        choices=["softmax", "sparsemax", "tsallis15", "esoftmax"],
         help="""Alias for alpha value to be used for generator and
               loss function. Softmax corresponds to alpha=1, sparsemax to
               alpha=2, and tsallis=1.5. If passed, this overrides an explicitly
               specified loss_alpha value. (choices: softmax, sparsemax,
               tsallis1.5).""",
+    )
+    group.add(
+        "--loss_fn",
+        "-loss_fn",
+        default="tsallis",
+        choices=["esoftmax", "tsallis"],
+        help="function to use for loss computation",
     )
     group.add(
         "--loss_alpha",

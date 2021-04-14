@@ -1,5 +1,5 @@
 data: examples/data/wmt_2014_en_de
-save_model: checkpoints/model.de-en.sparsesoftsoftmax
+save_model: checkpoints/model.de-en.esoftmax
 save_checkpoint_steps: 1000
 keep_checkpoint: 20
 seed: 3435
@@ -12,8 +12,9 @@ report_every: 100
 # warmup_steps: 5
 # report_every: 1
 
-self_attention_function: sparsesoftmax
-context_attention_function: sparsesoftmax
+# loss_fn: esoftmax
+self_attention_function: esoftmax
+context_attention_function: esoftmax
 # gpu_verbose_level: 1
 
 decoder_type: transformer
