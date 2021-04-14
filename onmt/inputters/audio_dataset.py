@@ -21,7 +21,7 @@ class AudioDataset(DatasetBase):
     from audio corpus.
 
     Args:
-        fields (dict): a dictionary of `torchtext.data.Field`.
+        fields (dict): a dictionary of `torchtext.legacy.data.Field`.
         src_examples_iter (dict iter): preprocessed source example
             dictionary iterator.
         tgt_examples_iter (dict iter): preprocessed target example
@@ -246,9 +246,9 @@ class AudioDataset(DatasetBase):
         """
         Args:
             n_src_features: the number of source features to
-                create `torchtext.data.Field` for.
+                create `torchtext.legacy.data.Field` for.
             n_tgt_features: the number of target features to
-                create `torchtext.data.Field` for.
+                create `torchtext.legacy.data.Field` for.
 
         Returns:
             A dictionary whose keys are strings and whose values
@@ -265,30 +265,30 @@ class AudioDataset(DatasetBase):
                 sounds[i, :, :, 0 : spect.size(1)] = spect
             return sounds
 
-        fields["src"] = torchtext.data.Field(
+        fields["src"] = torchtext.legacy.data.Field(
             use_vocab=False,
             dtype=torch.float,
             postprocessing=make_audio,
             sequential=False,
         )
 
-        fields["src_lengths"] = torchtext.data.Field(
+        fields["src_lengths"] = torchtext.legacy.data.Field(
             use_vocab=False, dtype=torch.long, sequential=False
         )
 
         for j in range(n_src_features):
-            fields["src_feat_" + str(j)] = torchtext.data.Field(pad_token=PAD_WORD)
+            fields["src_feat_" + str(j)] = torchtext.legacy.data.Field(pad_token=PAD_WORD)
 
-        fields["tgt"] = torchtext.data.Field(
+        fields["tgt"] = torchtext.legacy.data.Field(
             init_token=BOS_WORD, eos_token=EOS_WORD, pad_token=PAD_WORD
         )
 
         for j in range(n_tgt_features):
-            fields["tgt_feat_" + str(j)] = torchtext.data.Field(
+            fields["tgt_feat_" + str(j)] = torchtext.legacy.data.Field(
                 init_token=BOS_WORD, eos_token=EOS_WORD, pad_token=PAD_WORD
             )
 
-        fields["indices"] = torchtext.data.Field(
+        fields["indices"] = torchtext.legacy.data.Field(
             use_vocab=False, dtype=torch.long, sequential=False
         )
 
