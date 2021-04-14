@@ -500,8 +500,8 @@ class OrderedIterator(torchtext.legacy.data.Iterator):
         if self.train:
 
             def _pool(data, random_shuffler):
-                for p in torchtext.data.batch(data, self.batch_size * 100):
-                    p_batch = torchtext.data.batch(
+                for p in torchtext.legacy.data.batch(data, self.batch_size * 100):
+                    p_batch = torchtext.legacy.data.batch(
                         sorted(p, key=self.sort_key),
                         self.batch_size,
                         self.batch_size_fn,
@@ -512,7 +512,7 @@ class OrderedIterator(torchtext.legacy.data.Iterator):
             self.batches = _pool(self.data(), self.random_shuffler)
         else:
             self.batches = []
-            for b in torchtext.data.batch(
+            for b in torchtext.legacy.data.batch(
                 self.data(), self.batch_size, self.batch_size_fn
             ):
                 self.batches.append(sorted(b, key=self.sort_key))
