@@ -14,17 +14,17 @@ BOS_WORD = "<s>"
 EOS_WORD = "</s>"
 
 
-class DatasetBase(torchtext.legacy.data.Dataset):
+class DatasetBase(torchtext.data.Dataset):
     """
     A dataset basically supports iteration over all the examples
     it contains. We currently have 3 datasets inheriting this base
     for 3 types of corpus respectively: "text", "img", "audio".
 
-    Internally it initializes an `torchtext.legacy.data.Dataset` object with
+    Internally it initializes an `torchtext.data.Dataset` object with
     the following attributes:
 
-     `examples`: a sequence of `torchtext.legacy.data.Example` objects.
-     `fields`: a dictionary associating str keys with `torchtext.legacy.data.Field`
+     `examples`: a sequence of `torchtext.data.Example` objects.
+     `fields`: a dictionary associating str keys with `torchtext.data.Field`
         objects, and not necessarily having the same keys as the input fields.
     """
 
@@ -113,13 +113,13 @@ class DatasetBase(torchtext.legacy.data.Dataset):
             data: the data to be set as the value of the attributes of
                 the to-be-created `Example`, associating with respective
                 `Field` objects with same key.
-            fields: a dict of `torchtext.legacy.data.Field` objects. The keys
+            fields: a dict of `torchtext.data.Field` objects. The keys
                 are attributes of the to-be-created `Example`.
 
         Returns:
             the created `Example` object.
         """
-        ex = torchtext.legacy.data.Example()
+        ex = torchtext.data.Example()
         for (name, field), val in zip(fields, data):
             if field is not None:
                 setattr(ex, name, field.preprocess(val))

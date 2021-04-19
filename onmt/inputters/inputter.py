@@ -40,9 +40,9 @@ def get_fields(data_type, n_src_features, n_tgt_features):
     Args:
         data_type: type of the source input. Options are [text|img|audio].
         n_src_features: the number of source features to
-            create `torchtext.legacy.data.Field` for.
+            create `torchtext.data.Field` for.
         n_tgt_features: the number of target features to
-            create `torchtext.legacy.data.Field` for.
+            create `torchtext.data.Field` for.
 
     Returns:
         A dictionary whose keys are strings and whose values are the
@@ -492,7 +492,7 @@ def load_vocabulary(vocabulary_path, tag=""):
     return vocabulary
 
 
-class OrderedIterator(torchtext.legacy.data.Iterator):
+class OrderedIterator(torchtext.data.Iterator):
     """ Ordered Iterator Class """
 
     def create_batches(self):

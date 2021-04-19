@@ -27,7 +27,7 @@ class TextDataset(DatasetBase):
     from text corpus.
 
     Args:
-        fields (dict): a dictionary of `torchtext.legacy.data.Field`.
+        fields (dict): a dictionary of `torchtext.data.Field`.
             Keys are like 'src', 'tgt', 'src_map', and 'alignment'.
         src_examples_iter (dict iter): preprocessed source example
             dictionary iterator.
@@ -215,9 +215,9 @@ class TextDataset(DatasetBase):
         """
         Args:
             n_src_features (int): the number of source features to
-                create `torchtext.legacy.data.Field` for.
+                create `torchtext.data.Field` for.
             n_tgt_features (int): the number of target features to
-                create `torchtext.legacy.data.Field` for.
+                create `torchtext.data.Field` for.
 
         Returns:
             A dictionary whose keys are strings and whose values
@@ -225,17 +225,17 @@ class TextDataset(DatasetBase):
         """
         fields = {}
 
-        fields["src"] = torchtext.legacy.data.Field(pad_token=PAD_WORD, include_lengths=True)
+        fields["src"] = torchtext.data.Field(pad_token=PAD_WORD, include_lengths=True)
 
         for j in range(n_src_features):
-            fields["src_feat_" + str(j)] = torchtext.legacy.data.Field(pad_token=PAD_WORD)
+            fields["src_feat_" + str(j)] = torchtext.data.Field(pad_token=PAD_WORD)
 
-        fields["tgt"] = torchtext.legacy.data.Field(
+        fields["tgt"] = torchtext.data.Field(
             init_token=BOS_WORD, eos_token=EOS_WORD, pad_token=PAD_WORD
         )
 
         for j in range(n_tgt_features):
-            fields["tgt_feat_" + str(j)] = torchtext.legacy.data.Field(
+            fields["tgt_feat_" + str(j)] = torchtext.data.Field(
                 init_token=BOS_WORD, eos_token=EOS_WORD, pad_token=PAD_WORD
             )
 
@@ -249,7 +249,7 @@ class TextDataset(DatasetBase):
                     alignment[j, i, t] = 1
             return alignment
 
-        fields["src_map"] = torchtext.legacy.data.Field(
+        fields["src_map"] = torchtext.data.Field(
             use_vocab=False,
             dtype=torch.float,
             postprocessing=make_src,
@@ -264,11 +264,11 @@ class TextDataset(DatasetBase):
                 alignment[: sent.size(0), i] = sent
             return alignment
 
-        fields["alignment"] = torchtext.legacy.data.Field(
+        fields["alignment"] = torchtext.data.Field(
             use_vocab=False, dtype=torch.long, postprocessing=make_tgt, sequential=False
         )
 
-        fields["indices"] = torchtext.legacy.data.Field(
+        fields["indices"] = torchtext.data.Field(
             use_vocab=False, dtype=torch.long, sequential=False
         )
 
