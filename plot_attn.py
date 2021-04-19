@@ -70,13 +70,17 @@ def draw_all_squares(ax, M):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-plot", default="seachange.txt")
-    parser.add_argument("-fontsize", type=int, default=10)
+    parser.add_argument("--input", "-i", required=True)
+    parser.add_argument("--output", "-o", required=True)
+    parser.add_argument("--sentence_number", "-n", type=int, default=12)
+    parser.add_argument("--fontsize", "-fontsize", type=int, default=10)
     opt = parser.parse_args()
 
-    attns = load(opt.plot)
-    src = "Aber wir beginnen , eine Veränderung zu sehen .".split()
-    pred = "But we start to see a change . </s>".split()
+    attns_list = torch.load(opt.input)
+    src = attns_list[opt.sentence_number]['src']
+    pred = attns_list[opt.sentence_number]['pred']
+    attns = attns_list[opt.sentence_number]['attns']
+    attns = attns[:len(pred), :len(src)]
 
     fig = plt.figure(figsize=(2.5, 2.5))
     ax = fig.add_subplot(111)
@@ -100,8 +104,8 @@ def main():
     ax.xaxis.set_major_locator(ticker.MultipleLocator(1))
     ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
 
-    plt.savefig("seachange.pdf")
-    # plt.savefig(opt.outpath, bbox_inches='tight')
+    # plt.savefig("seachange.pdf")
+    plt.savefig(opt.output, bbox_inches='tight')
 
 
 if __name__ == "__main__":

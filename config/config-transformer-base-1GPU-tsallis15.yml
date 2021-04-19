@@ -1,5 +1,5 @@
 data: data/wmt-2016-en-de/
-save_model: checkpoints/model.de-en.softmax
+save_model: checkpoints/model.de-en.tsallis15
 save_checkpoint_steps: 5000
 keep_checkpoint: 20
 seed: 3435
@@ -12,9 +12,9 @@ report_every: 100
 # warmup_steps: 5
 # report_every: 1
 
-# loss_fn: softmax
-self_attention_function: softmax
-context_attention_function: softmax
+# loss_fn: tsallis15
+self_attention_function: tsallis15
+context_attention_function: tsallis15
 # gpu_verbose_level: 1
 
 decoder_type: transformer

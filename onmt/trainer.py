@@ -197,52 +197,55 @@ class Trainer(object):
                                 onmt.utils.distributed.all_gather_list(normalization)
                             )
 
-                        self._gradient_accumulation(
-                            true_batchs, normalization, total_stats, report_stats
-                        )
-
-                        report_stats = self._maybe_report_training(
-                            step, train_steps, self.optim.learning_rate, report_stats
-                        )
-
-                        true_batchs = []
-                        accum = 0
-                        normalization = 0
-                        if step % valid_steps == 0:
-                            if self.gpu_verbose_level > 0:
-                                logger.info(
-                                    "GpuRank %d: validate step %d"
-                                    % (self.gpu_rank, step)
-                                )
-                            valid_iter = valid_iter_fct()
-                            valid_stats = self.validate(valid_iter)
-                            if self.gpu_verbose_level > 0:
-                                logger.info(
-                                    "GpuRank %d: gather valid stat \
-                                            step %d"
-                                    % (self.gpu_rank, step)
-                                )
-                            valid_stats = self._maybe_gather_stats(valid_stats)
-                            if self.gpu_verbose_level > 0:
-                                logger.info(
-                                    "GpuRank %d: report stat step %d"
-                                    % (self.gpu_rank, step)
-                                )
-                            self._report_step(
-                                self.optim.learning_rate, step, valid_stats=valid_stats
+                        try:
+                            self._gradient_accumulation(
+                                true_batchs, normalization, total_stats, report_stats
                             )
-                            if (
-                                self.optim.decay_method == "smart"
-                                and valid_stats.loss > previous_valid_loss
-                            ):
-                                self.optim.decay_learning_rate()
-                            previous_valid_loss = valid_stats.loss
 
-                        if self.gpu_rank == 0:
-                            self._maybe_save(step)
-                        step += 1
-                        if step > train_steps:
-                            break
+                            report_stats = self._maybe_report_training(
+                                step, train_steps, self.optim.learning_rate, report_stats
+                            )
+
+                            true_batchs = []
+                            accum = 0
+                            normalization = 0
+                            if step % valid_steps == 0:
+                                if self.gpu_verbose_level > 0:
+                                    logger.info(
+                                        "GpuRank %d: validate step %d"
+                                        % (self.gpu_rank, step)
+                                    )
+                                valid_iter = valid_iter_fct()
+                                valid_stats = self.validate(valid_iter)
+                                if self.gpu_verbose_level > 0:
+                                    logger.info(
+                                        "GpuRank %d: gather valid stat \
+                                                step %d"
+                                        % (self.gpu_rank, step)
+                                    )
+                                valid_stats = self._maybe_gather_stats(valid_stats)
+                                if self.gpu_verbose_level > 0:
+                                    logger.info(
+                                        "GpuRank %d: report stat step %d"
+                                        % (self.gpu_rank, step)
+                                    )
+                                self._report_step(
+                                    self.optim.learning_rate, step, valid_stats=valid_stats
+                                )
+                                if (
+                                    self.optim.decay_method == "smart"
+                                    and valid_stats.loss > previous_valid_loss
+                                ):
+                                    self.optim.decay_learning_rate()
+                                previous_valid_loss = valid_stats.loss
+
+                            if self.gpu_rank == 0:
+                                self._maybe_save(step)
+                            step += 1
+                            if step > train_steps:
+                                break
+                        except:
+                            logger.info("Exception occurred during training.")
             if self.gpu_verbose_level > 0:
                 logger.info(
                     "GpuRank %d: we completed an epoch \

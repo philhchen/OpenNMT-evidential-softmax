@@ -1,0 +1,11 @@
+model: checkpoints/model.de-en.tsallis15_step_95000.pt
+src: data/wmt-2016-en-de/test.en
+tgt: data/wmt-2016-en-de/test.de
+output: data/wmt-2016-en-de/esoftmax_pred.txt
+replace_unk: 'true'
+verbose: 'true'
+report_bleu: 'true'
+gpu: 0
+log_file: logs/esoftmax_test
+attn_out: results/attn_out/esoftmax.pt
+beam_score_out: results/beam_score_out/esoftmax.pt
